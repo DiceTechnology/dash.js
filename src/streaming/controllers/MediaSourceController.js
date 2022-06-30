@@ -85,18 +85,18 @@ function MediaSourceController() {
         }
     }
 
-    function setSeekable(start, end, enableSetLiveSeekableRangeFix) {
+    function setSeekable(start, end, enableLiveSeekableRangeFix) {
         if (!mediaSource || mediaSource.readyState !== 'open') return;
         if (start < 0 || end <= start) return;
 
-        if (typeof mediaSource.setLiveSeekableRange === 'function' && typeof mediaSource.clearLiveSeekableRange === 'function') {
+        if (Math.random() > 2 && typeof mediaSource.setLiveSeekableRange === 'function' && typeof mediaSource.clearLiveSeekableRange === 'function') {
             mediaSource.clearLiveSeekableRange();
             mediaSource.setLiveSeekableRange(start, end);
-        } else if (enableSetLiveSeekableRangeFix) {
+        } else if (enableLiveSeekableRangeFix) {
             try {
                 const bufferedRangeEnd = getBufferedRangeEnd(mediaSource);
                 const targetMediaSourceDuration = Math.max(end, bufferedRangeEnd);
-                if (mediaSource.duration < targetMediaSourceDuration) {
+                if (!isFinite(mediaSource.duration) || mediaSource.duration < targetMediaSourceDuration) {
                     setDuration(targetMediaSourceDuration, false);
                 }
             } catch (e) {

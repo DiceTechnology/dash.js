@@ -194,7 +194,7 @@ declare namespace dashjs {
                 stallThreshold?: number,
                 useAppendWindow?: boolean,
                 setStallState?: boolean,
-                enableSetLiveSeekableRangeFix?: boolean
+                enableLiveSeekableRangeFix?: boolean
             },
             gaps?: {
                 jumpGaps?: boolean,
