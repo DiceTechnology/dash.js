@@ -193,7 +193,8 @@ declare namespace dashjs {
                 longFormContentDurationThreshold?: number,
                 stallThreshold?: number,
                 useAppendWindow?: boolean,
-                setStallState?: boolean
+                setStallState?: boolean,
+                enableSetLiveSeekableRangeFix?: boolean
             },
             gaps?: {
                 jumpGaps?: boolean,

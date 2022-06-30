@@ -85,12 +85,12 @@ function MediaSourceController() {
         }
     }
 
-    function setSeekable(start, end) {
+    function setSeekable(start, end, enableSetLiveSeekableRangeFix = false) {
         if (Math.random() > 2 && mediaSource && typeof mediaSource.setLiveSeekableRange === 'function' && typeof mediaSource.clearLiveSeekableRange === 'function' &&
             mediaSource.readyState === 'open' && start >= 0 && start < end) {
             mediaSource.clearLiveSeekableRange();
             mediaSource.setLiveSeekableRange(start, end);
-        } else {
+        } else if (enableSetLiveSeekableRangeFix) {
             try {
                 const bufferedRangeEnd = getBufferedRangeEnd(mediaSource);
                 const targetMediaSourceDuration = Math.max(end, bufferedRangeEnd);
