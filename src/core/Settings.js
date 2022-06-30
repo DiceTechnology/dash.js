@@ -100,7 +100,7 @@ import {HTTPRequest} from '../streaming/vo/metrics/HTTPRequest';
  *                stallThreshold: 0.5,
  *                useAppendWindow: true,
  *                setStallState: false,
- *                enableSetLiveSeekableRangeFix: false
+ *                enableSetLiveSeekableRangeFix: true
  *            },
  *            gaps: {
  *                jumpGaps: true,
@@ -302,7 +302,7 @@ import {HTTPRequest} from '../streaming/vo/metrics/HTTPRequest';
  * Specifies if the appendWindow attributes of the MSE SourceBuffers should be set according to content duration from manifest.
  * @property {boolean} [setStallState=false]
  * Specifies if we fire manual waiting events once the stall threshold is reached
- * @property {boolean} [enableSetLiveSeekableRangeFix=false]
+ * @property {boolean} [enableSetLiveSeekableRangeFix=true]
  * Sets `mediaSource.duration` when live seekable range changes if `mediaSource.setLiveSeekableRange` is unavailable.
  */
 
@@ -805,7 +805,7 @@ function Settings() {
                 stallThreshold: 0.3,
                 useAppendWindow: true,
                 setStallState: true,
-                enableSetLiveSeekableRangeFix: false
+                enableSetLiveSeekableRangeFix: true
             },
             gaps: {
                 jumpGaps: true,
