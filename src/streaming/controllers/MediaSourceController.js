@@ -86,8 +86,10 @@ function MediaSourceController() {
     }
 
     function setSeekable(start, end, enableSetLiveSeekableRangeFix) {
-        if (mediaSource && typeof mediaSource.setLiveSeekableRange === 'function' && typeof mediaSource.clearLiveSeekableRange === 'function' &&
-            mediaSource.readyState === 'open' && start >= 0 && start < end) {
+        if (!mediaSource || mediaSource.readyState !== 'open') return;
+        if (start < 0 || end <= start) return;
+
+        if (typeof mediaSource.setLiveSeekableRange === 'function' && typeof mediaSource.clearLiveSeekableRange === 'function') {
             mediaSource.clearLiveSeekableRange();
             mediaSource.setLiveSeekableRange(start, end);
         } else if (enableSetLiveSeekableRangeFix) {
