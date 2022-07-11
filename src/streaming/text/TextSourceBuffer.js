@@ -175,7 +175,7 @@ function TextSourceBuffer(config) {
         const chunk = e.chunk;
         const chunkId = `${chunk.streamId}_${chunk.mediaInfo.id}_${chunk.index}`;
 
-         if (chunk.mediaInfo.embeddedCaptions && !processedChunks.has(chunkId)) {
+        if (chunk.mediaInfo.embeddedCaptions && !processedChunks.has(chunkId)) {
             append(chunk.bytes, chunk);
             if (chunk.segmentType === 'MediaSegment') {
                 processedChunks.set(chunkId, { start: chunk.start, end: chunk.end });
