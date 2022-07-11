@@ -438,7 +438,7 @@ function StreamController() {
 
             _setMediaDuration();
             const dvrInfo = dashMetrics.getCurrentDVRInfo();
-            mediaSourceController.setSeekable(dvrInfo.range.start, dvrInfo.range.end);
+            mediaSourceController.setSeekable(dvrInfo.range.start, dvrInfo.range.end, _enableLiveSeekableRangeFix());
             _activateStream(seekTime, keepBuffers);
         }
 
@@ -624,6 +624,10 @@ function StreamController() {
         } catch (e) {
             return false;
         }
+    }
+
+    function _enableLiveSeekableRangeFix() {
+        return settings.get().streaming.buffer.enableLiveSeekableRangeFix;
     }
 
     /**
@@ -1529,7 +1533,7 @@ function StreamController() {
             //Should we normalize and union the two?
             const targetMediaType = hasAudioTrack() ? Constants.AUDIO : Constants.VIDEO;
             if (e.mediaType === targetMediaType) {
-                mediaSourceController.setSeekable(e.value.range.start, e.value.range.end);
+                mediaSourceController.setSeekable(e.value.range.start, e.value.range.end, _enableLiveSeekableRangeFix());
             }
         }
     }

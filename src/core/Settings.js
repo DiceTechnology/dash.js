@@ -68,7 +68,8 @@ import Events from './events/Events';
  *            eventControllerRefreshDelay: 100,
  *            capabilities: {
  *               filterUnsupportedEssentialProperties: true,
- *               useMediaCapabilitiesApi: false
+ *               useMediaCapabilitiesApi: false,
+ *               replaceCodecs: []
  *            },
  *            timeShiftBuffer: {
  *                calcFromSegmentTimeline: false,
@@ -101,7 +102,8 @@ import Events from './events/Events';
  *                longFormContentDurationThreshold: 600,
  *                stallThreshold: 0.5,
  *                useAppendWindow: true,
- *                setStallState: true
+ *                setStallState: true,
+ *                enableLiveSeekableRangeFix: true
  *            },
  *            gaps: {
  *                jumpGaps: true,
@@ -303,6 +305,8 @@ import Events from './events/Events';
  * Specifies if the appendWindow attributes of the MSE SourceBuffers should be set according to content duration from manifest.
  * @property {boolean} [setStallState=true]
  * Specifies if we fire manual waiting events once the stall threshold is reached
+ * @property {boolean} [enableLiveSeekableRangeFix=true]
+ * Sets `mediaSource.duration` when live seekable range changes if `mediaSource.setLiveSeekableRange` is unavailable.
  */
 
 /**
@@ -521,9 +525,10 @@ import Events from './events/Events';
  * If true, the ProtectionController and then created MediaKeys and MediaKeySessions will be preserved during the MediaPlayer lifetime.
  * @property {boolean} ignoreEmeEncryptedEvent
  * If set to true the player will ignore "encrypted" and "needkey" events thrown by the EME.
- *
  * @property {boolean} detectPlayreadyMessageFormat
  * If set to true the player will use the raw unwrapped message from the Playready CDM
+ * @property {boolean} downgradePlayReadyPSSH
+ * If set to true the player will downgrade v1 PSSH boxes to v0.
  */
 
 /**
@@ -532,6 +537,8 @@ import Events from './events/Events';
  * Enable to filter all the AdaptationSets and Representations which contain an unsupported \<EssentialProperty\> element.
  * @property {boolean} [useMediaCapabilitiesApi=false]
  * Enable to use the MediaCapabilities API to check whether codecs are supported. If disabled MSE.isTypeSupported will be used instead.
+ * @property {Array.<[string, string]>} [replaceCodecs=[]]
+ * List of codecs to be replaced.
  */
 
 /**
@@ -770,7 +777,8 @@ function Settings() {
             eventControllerRefreshDelay: 150,
             capabilities: {
                 filterUnsupportedEssentialProperties: true,
-                useMediaCapabilitiesApi: false
+                useMediaCapabilitiesApi: false,
+                replaceCodecs: []
             },
             timeShiftBuffer: {
                 calcFromSegmentTimeline: false,
@@ -788,6 +796,7 @@ function Settings() {
                 keepProtectionMediaKeys: false,
                 ignoreEmeEncryptedEvent: false,
                 detectPlayreadyMessageFormat: true,
+                downgradePlayReadyPSSH: false
             },
             buffer: {
                 enableSeekDecorrelationFix: false,
@@ -803,7 +812,8 @@ function Settings() {
                 longFormContentDurationThreshold: 600,
                 stallThreshold: 0.3,
                 useAppendWindow: true,
-                setStallState: true
+                setStallState: true,
+                enableLiveSeekableRangeFix: true
             },
             gaps: {
                 jumpGaps: true,

@@ -56,6 +56,7 @@ function TextSourceBuffer(config) {
     const context = this.context;
     const eventBus = EventBus(context).getInstance();
     let embeddedInitialized = false;
+    let processedChunks = new Map();
 
     let instance,
         logger,
@@ -172,9 +173,13 @@ function TextSourceBuffer(config) {
 
     function _onVideoChunkReceived(e) {
         const chunk = e.chunk;
+        const chunkId = `${chunk.streamId}_${chunk.mediaInfo.id}_${chunk.index}`;
 
-        if (chunk.mediaInfo.embeddedCaptions) {
+         if (chunk.mediaInfo.embeddedCaptions && !processedChunks.has(chunkId)) {
             append(chunk.bytes, chunk);
+            if (chunk.segmentType === 'MediaSegment') {
+                processedChunks.set(chunkId, { start: chunk.start, end: chunk.end });
+            }
         }
     }
 
@@ -506,22 +511,19 @@ function TextSourceBuffer(config) {
         const raw = new DataView(data);
         for (let i = 0; i < samples.length; i++) {
             const sample = samples[i];
-            const cea608Ranges = cea608parser.findCea608Nalus(raw, sample.offset, sample.size);
+            const ccData = cea608parser.extractCea608DataFromSample(raw, sample.offset, sample.size);
             let lastSampleTime = null;
             let idx = 0;
-            for (let j = 0; j < cea608Ranges.length; j++) {
-                const ccData = cea608parser.extractCea608DataFromRange(raw, cea608Ranges[j]);
-                for (let k = 0; k < 2; k++) {
-                    if (ccData[k].length > 0) {
-                        if (sample.cts !== lastSampleTime) {
-                            idx = 0;
-                        } else {
-                            idx += 1;
-                        }
-                        const timestampOffset = _getTimestampOffset();
-                        allCcData.fields[k].push([sample.cts + (timestampOffset * embeddedTimescale), ccData[k], idx]);
-                        lastSampleTime = sample.cts;
+            for (let k = 0; k < 2; k++) {
+                if (ccData[k].length > 0) {
+                    if (sample.cts !== lastSampleTime) {
+                        idx = 0;
+                    } else {
+                        idx += 1;
                     }
+                    const timestampOffset = _getTimestampOffset();
+                    allCcData.fields[k].push([sample.cts + (timestampOffset * embeddedTimescale), ccData[k], idx]);
+                    lastSampleTime = sample.cts;
                 }
             }
         }
@@ -587,6 +589,16 @@ function TextSourceBuffer(config) {
             const trackIdx = textTracks.getTrackIdxForId(track.id);
             if (trackIdx >= 0) {
                 textTracks.deleteCuesFromTrackIdx(trackIdx, e.from, e.to);
+                Array.from(processedChunks.entries())
+                    .filter((entry) => {
+                        const start = entry[1].start;
+                        const end = entry[1].end;
+                        return Math.max(start, e.from) < Math.min(end, e.to);
+                    })
+                    .forEach((entry) => {
+                        const key = entry[0];
+                        processedChunks.delete(key);
+                    });
             }
         });
     }

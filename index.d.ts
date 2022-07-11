@@ -157,7 +157,8 @@ declare namespace dashjs {
             eventControllerRefreshDelay?: number,
             capabilities?: {
                 filterUnsupportedEssentialProperties?: boolean,
-                useMediaCapabilitiesApi?: boolean
+                useMediaCapabilitiesApi?: boolean,
+                replaceCodecs?: [string, string][]
             },
             timeShiftBuffer?: {
                 calcFromSegmentTimeline?: boolean
@@ -175,6 +176,7 @@ declare namespace dashjs {
                 keepProtectionMediaKeys?: boolean,
                 ignoreEmeEncryptedEvent?: boolean,
                 detectPlayreadyMessageFormat?: boolean,
+                downgradePlayReadyPSSH?: boolean
             },
             buffer?: {
                 enableSeekDecorrelationFix?: boolean,
@@ -190,7 +192,8 @@ declare namespace dashjs {
                 longFormContentDurationThreshold?: number,
                 stallThreshold?: number,
                 useAppendWindow?: boolean,
-                setStallState?: boolean
+                setStallState?: boolean,
+                enableLiveSeekableRangeFix?: boolean
             },
             gaps?: {
                 jumpGaps?: boolean,
