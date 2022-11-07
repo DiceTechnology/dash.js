@@ -70,7 +70,8 @@ import Events from './events/Events';
  *            enableManifestDurationMismatchFix: true,
  *            capabilities: {
  *               filterUnsupportedEssentialProperties: true,
- *               useMediaCapabilitiesApi: false
+ *               useMediaCapabilitiesApi: false,
+ *               replaceCodecs: []
  *            },
  *            timeShiftBuffer: {
  *                calcFromSegmentTimeline: false,
@@ -105,6 +106,7 @@ import Events from './events/Events';
  *                useAppendWindow: true,
  *                setStallState: true,
  *                avoidCurrentTimeRangePruning: false
+ *                enableLiveSeekableRangeFix: true
  *            },
  *            gaps: {
  *                jumpGaps: true,
@@ -309,6 +311,8 @@ import Events from './events/Events';
  * Avoids pruning of the buffered range that contains the current playback time.
  *
  * That buffered range is likely to have been enqueued for playback. Pruning it causes a flush and reenqueue in WPE and WebKitGTK based browsers. This stresses the video decoder and can cause stuttering on embedded platforms.
+ * @property {boolean} [enableLiveSeekableRangeFix=true]
+ * Sets `mediaSource.duration` when live seekable range changes if `mediaSource.setLiveSeekableRange` is unavailable.
  */
 
 /**
@@ -518,9 +522,10 @@ import Events from './events/Events';
  * If true, the ProtectionController and then created MediaKeys and MediaKeySessions will be preserved during the MediaPlayer lifetime.
  * @property {boolean} ignoreEmeEncryptedEvent
  * If set to true the player will ignore "encrypted" and "needkey" events thrown by the EME.
- *
  * @property {boolean} detectPlayreadyMessageFormat
  * If set to true the player will use the raw unwrapped message from the Playready CDM
+ * @property {boolean} downgradePlayReadyPSSH
+ * If set to true the player will downgrade v1 PSSH boxes to v0.
  */
 
 /**
@@ -529,6 +534,8 @@ import Events from './events/Events';
  * Enable to filter all the AdaptationSets and Representations which contain an unsupported \<EssentialProperty\> element.
  * @property {boolean} [useMediaCapabilitiesApi=false]
  * Enable to use the MediaCapabilities API to check whether codecs are supported. If disabled MSE.isTypeSupported will be used instead.
+ * @property {Array.<[string, string]>} [replaceCodecs=[]]
+ * List of codecs to be replaced.
  */
 
 /**
@@ -773,7 +780,8 @@ function Settings() {
             enableManifestDurationMismatchFix: true,
             capabilities: {
                 filterUnsupportedEssentialProperties: true,
-                useMediaCapabilitiesApi: false
+                useMediaCapabilitiesApi: false,
+                replaceCodecs: []
             },
             timeShiftBuffer: {
                 calcFromSegmentTimeline: false,
@@ -791,6 +799,7 @@ function Settings() {
                 keepProtectionMediaKeys: false,
                 ignoreEmeEncryptedEvent: false,
                 detectPlayreadyMessageFormat: true,
+                downgradePlayReadyPSSH: false
             },
             buffer: {
                 enableSeekDecorrelationFix: false,
@@ -807,7 +816,8 @@ function Settings() {
                 stallThreshold: 0.3,
                 useAppendWindow: true,
                 setStallState: true,
-                avoidCurrentTimeRangePruning: false
+                avoidCurrentTimeRangePruning: false,
+                enableLiveSeekableRangeFix: true
             },
             gaps: {
                 jumpGaps: true,

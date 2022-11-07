@@ -95,7 +95,6 @@ function Capabilities() {
      * @return {Promise<boolean>}
      */
     function supportsCodec(config, type) {
-
         if (type !== Constants.AUDIO && type !== Constants.VIDEO) {
             return Promise.resolve(true);
         }

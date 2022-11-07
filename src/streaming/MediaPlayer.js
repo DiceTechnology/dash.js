@@ -1276,9 +1276,7 @@ function MediaPlayer() {
      * @instance
      */
     function enableForcedTextStreaming(enable) {
-        const activeStreamInfo = streamController.getActiveStreamInfo();
-
-        if (!activeStreamInfo || !textController) {
+        if (!textController) {
             return false;
         }
 
