@@ -31,7 +31,8 @@
 import {
     HTTPRequest
 }
-from '../../../src/streaming/vo/metrics/HTTPRequest';
+    from '../../../src/streaming/vo/metrics/HTTPRequest';
+
 
 const DEFAULT_UTC_TIMING_SOURCE = {
     scheme: 'urn:mpeg:dash:utc:http-xsdate:2014',
@@ -101,12 +102,15 @@ class MediaPlayerModelMock {
         return DEFAULT_XHR_WITH_CREDENTIALS;
     }
 
-    constructor() {
+    constructor(data) {
         this.setup();
+
+        if (data && data.settings) {
+            this.settings = data.settings;
+        }
     }
 
     setup() {
-        this.UTCTimingSources = [];
         this.fastSwitchEnabled = false;
         this.liveDelay = null; // Explicitly state that default is null
         this.stableBufferTime = -1;
@@ -116,57 +120,24 @@ class MediaPlayerModelMock {
         this.customABRRule = [];
 
         this.retryAttempts = {
-            [HTTPRequest.MPD_TYPE]: MANIFEST_RETRY_ATTEMPTS, [HTTPRequest.XLINK_EXPANSION_TYPE]: XLINK_RETRY_ATTEMPTS, [HTTPRequest.MEDIA_SEGMENT_TYPE]: FRAGMENT_RETRY_ATTEMPTS, [HTTPRequest.INIT_SEGMENT_TYPE]: FRAGMENT_RETRY_ATTEMPTS, [HTTPRequest.BITSTREAM_SWITCHING_SEGMENT_TYPE]: FRAGMENT_RETRY_ATTEMPTS, [HTTPRequest.INDEX_SEGMENT_TYPE]: FRAGMENT_RETRY_ATTEMPTS, [HTTPRequest.OTHER_TYPE]: FRAGMENT_RETRY_ATTEMPTS
+            [HTTPRequest.MPD_TYPE]: MANIFEST_RETRY_ATTEMPTS,
+            [HTTPRequest.XLINK_EXPANSION_TYPE]: XLINK_RETRY_ATTEMPTS,
+            [HTTPRequest.MEDIA_SEGMENT_TYPE]: FRAGMENT_RETRY_ATTEMPTS,
+            [HTTPRequest.INIT_SEGMENT_TYPE]: FRAGMENT_RETRY_ATTEMPTS,
+            [HTTPRequest.BITSTREAM_SWITCHING_SEGMENT_TYPE]: FRAGMENT_RETRY_ATTEMPTS,
+            [HTTPRequest.INDEX_SEGMENT_TYPE]: FRAGMENT_RETRY_ATTEMPTS,
+            [HTTPRequest.OTHER_TYPE]: FRAGMENT_RETRY_ATTEMPTS
         };
 
         this.retryIntervals = {
-            [HTTPRequest.MPD_TYPE]: MANIFEST_RETRY_INTERVAL, [HTTPRequest.XLINK_EXPANSION_TYPE]: XLINK_RETRY_INTERVAL, [HTTPRequest.MEDIA_SEGMENT_TYPE]: FRAGMENT_RETRY_INTERVAL, [HTTPRequest.INIT_SEGMENT_TYPE]: FRAGMENT_RETRY_INTERVAL, [HTTPRequest.BITSTREAM_SWITCHING_SEGMENT_TYPE]: FRAGMENT_RETRY_INTERVAL, [HTTPRequest.INDEX_SEGMENT_TYPE]: FRAGMENT_RETRY_INTERVAL, [HTTPRequest.OTHER_TYPE]: FRAGMENT_RETRY_INTERVAL
+            [HTTPRequest.MPD_TYPE]: MANIFEST_RETRY_INTERVAL,
+            [HTTPRequest.XLINK_EXPANSION_TYPE]: XLINK_RETRY_INTERVAL,
+            [HTTPRequest.MEDIA_SEGMENT_TYPE]: FRAGMENT_RETRY_INTERVAL,
+            [HTTPRequest.INIT_SEGMENT_TYPE]: FRAGMENT_RETRY_INTERVAL,
+            [HTTPRequest.BITSTREAM_SWITCHING_SEGMENT_TYPE]: FRAGMENT_RETRY_INTERVAL,
+            [HTTPRequest.INDEX_SEGMENT_TYPE]: FRAGMENT_RETRY_INTERVAL,
+            [HTTPRequest.OTHER_TYPE]: FRAGMENT_RETRY_INTERVAL
         };
-    }
-
-    //TODO Should we use Object.define to have setters/getters? makes more readable code on other side.
-    findABRCustomRuleIndex(rulename) {
-        let i;
-        for (i = 0; i < this.customABRRule.length; i++) {
-            if (this.customABRRule[i].rulename === rulename) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    getABRCustomRules() {
-        return this.customABRRule;
-    }
-
-    addABRCustomRule(type, rulename, rule) {
-
-        let index = this.findABRCustomRuleIndex(rulename);
-        if (index === -1) {
-            // add rule
-            this.customABRRule.push({
-                type: type,
-                rulename: rulename,
-                rule: rule
-            });
-        } else {
-            // update rule
-            this.customABRRule[index].type = type;
-            this.customABRRule[index].rule = rule;
-        }
-    }
-
-    removeABRCustomRule(rulename) {
-        if (rulename) {
-            let index = this.findABRCustomRuleIndex(rulename);
-            if (index !== -1) {
-                // remove rule
-                this.customABRRule.splice(index, 1);
-            }
-        } else {
-            //if no rulename is defined, remove all ABR custome rules
-            this.customABRRule = [];
-        }
     }
 
     getStableBufferTime() {
@@ -189,64 +160,12 @@ class MediaPlayerModelMock {
         return this.retryIntervals[type];
     }
 
-    getLiveDelay() {
-        return this.liveDelay;
-    }
-
-    setUTCTimingSources(value) {
-        this.UTCTimingSources = value;
-    }
-
-    addUTCTimingSource(schemeIdUri, value) {
-        this.removeUTCTimingSource(schemeIdUri, value); //check if it already exists and remove if so.
-        let vo = {};
-        vo.schemeIdUri = schemeIdUri;
-        vo.value = value;
-        this.UTCTimingSources.push(vo);
-    }
-
-    getUTCTimingSources() {
-        return this.UTCTimingSources;
-    }
-
-    removeUTCTimingSource(schemeIdUri, value) {
-        for (let i = 0; i < this.UTCTimingSources.length; i++) {
-            if (this.UTCTimingSources[i].schemeIdUri === schemeIdUri && this.UTCTimingSources[i].value === value) {
-                this.UTCTimingSources.splice(i, 1);
-            }
-        }
-    }
-
-    clearDefaultUTCTimingSources() {
-        this.UTCTimingSources = [];
-    }
-
-    restoreDefaultUTCTimingSources() {
-        this.addUTCTimingSource(DEFAULT_UTC_TIMING_SOURCE.scheme, DEFAULT_UTC_TIMING_SOURCE.value);
-    }
-
-    setXHRWithCredentialsForType(type, value) {
-        if (!type) {
-            Object.keys(this.xhrWithCredentials).forEach(key => {
-                this.setXHRWithCredentialsForType(key, value);
-            });
-        } else {
-            this.xhrWithCredentials[type] = !!value;
-        }
-    }
-
-    getXHRWithCredentialsForType(type) {
-        const useCreds = this.xhrWithCredentials[type];
-
-        if (useCreds === undefined) {
-            return this.xhrWithCredentials.default;
-        }
-
-        return useCreds;
-    }
-
     reset() {
         this.setup();
+    }
+
+    setConfig() {
+
     }
 }
 

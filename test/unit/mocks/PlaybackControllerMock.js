@@ -11,6 +11,7 @@ class PlaybackControllerMock {
         this.playing = false;
         this.seeking = false;
         this.isDynamic = false;
+        this.lowLatencyEnabled = false;
         this.time = 0;
         this.streamController = new StreamControllerMock();
         this.streamController.setup();
@@ -69,10 +70,6 @@ class PlaybackControllerMock {
         this.time = time;
     }
 
-    getNormalizedTime() {
-        return null;
-    }
-
     getPlaybackRate() {
         return null;
     }
@@ -101,8 +98,16 @@ class PlaybackControllerMock {
         return this.liveStartTime;
     }
 
-    computeLiveDelay() {
-        return 16;
+    computeAndSetLiveDelay() {
+        return 15;
+    }
+
+    getLiveDelay() {
+        return 15;
+    }
+
+    getOriginalLiveDelay() {
+        return 15;
     }
 
     reset() {
@@ -115,6 +120,21 @@ class PlaybackControllerMock {
     getStreamStartTime() {
         return 0;
     }
+
+    getAvailabilityStartTime() {
+        return 0;
+    }
+
+    getLowLatencyModeEnabled() {
+        return this.lowLatencyEnabled;
+    }
+
+    setLowLatencyModeEnabled(value) {
+        this.lowLatencyEnabled = value;
+    }
+
 }
+
+
 
 export default PlaybackControllerMock;

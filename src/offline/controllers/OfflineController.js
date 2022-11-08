@@ -41,7 +41,7 @@ import OfflineRecord from '../vo/OfflineDownloadVo';
 /**
  * @module OfflineController
  * @param {Object} config - dependencies
- * @description Provides access to offline stream recording and playback functionality.
+ * @description Provides access to offline stream recording and playback functionality. This module can be accessed using the MediaPlayer API getOfflineController()
  */
 function OfflineController(config) {
 
@@ -59,6 +59,7 @@ function OfflineController(config) {
     const playbackController = config.playbackController;
     const dashMetrics = config.dashMetrics;
     const timelineConverter = config.timelineConverter;
+    const segmentBaseController = config.segmentBaseController;
     const adapter = config.adapter;
     const manifestUpdater = config.manifestUpdater;
     const baseURLController = config.baseURLController;
@@ -121,6 +122,7 @@ function OfflineController(config) {
                 dashMetrics: dashMetrics,
                 timelineConverter: timelineConverter,
                 errHandler: errHandler,
+                segmentBaseController: segmentBaseController,
                 offlineStoreController: offlineStoreController,
                 debug: debug,
                 constants: constants,
@@ -260,12 +262,12 @@ function OfflineController(config) {
                 download.initDownload();
                 resolve(id);
             })
-            .catch((e) => {
-                logger.error('Failed to download ' + e);
-                removeDownloadFromId(id).then(function () {
-                    reject(e);
+                .catch((e) => {
+                    logger.error('Failed to download ' + e);
+                    removeDownloadFromId(id).then(function () {
+                        reject(e);
+                    });
                 });
-            });
         });
     }
 

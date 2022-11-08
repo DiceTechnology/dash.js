@@ -11,12 +11,13 @@ import MediaControllerMock from './mocks/MediaControllerMock';
 import ObjectUtils from './../../src/streaming/utils/ObjectUtils';
 import Constants from '../../src/streaming/constants/Constants';
 import Settings from '../../src/core/Settings';
+import ABRRulesCollection from '../../src/streaming/rules/abr/ABRRulesCollection';
+import CustomParametersModel from '../../src/streaming/models/CustomParametersModel';
 
 const expect = require('chai').expect;
 const ELEMENT_NOT_ATTACHED_ERROR = 'You must first call attachView() to set the video element before calling this method';
 const PLAYBACK_NOT_INITIALIZED_ERROR = 'You must first call initialize() and set a valid source and view before calling this method';
 const STREAMING_NOT_INITIALIZED_ERROR = 'You must first call initialize() and set a source before calling this method';
-const SOURCE_NOT_ATTACHED_ERROR = 'You must first call attachSource() with a valid source before calling this method';
 const MEDIA_PLAYER_NOT_INITIALIZED_ERROR = 'MediaPlayer not initialized!';
 
 describe('MediaPlayer', function () {
@@ -42,6 +43,7 @@ describe('MediaPlayer', function () {
     const mediaControllerMock = new MediaControllerMock();
     const objectUtils = ObjectUtils(context).getInstance();
     const settings = Settings(context).getInstance();
+    const customParametersModel = CustomParametersModel(context).getInstance();
     let player;
 
     beforeEach(function () {
@@ -58,7 +60,8 @@ describe('MediaPlayer', function () {
             mediaPlayerModel: mediaPlayerModel,
             abrController: abrControllerMock,
             mediaController: mediaControllerMock,
-            settings: settings
+            settings: settings,
+            customParametersModel
         });
     });
 
@@ -181,9 +184,6 @@ describe('MediaPlayer', function () {
                 expect(player.durationAsUTC).to.throw(PLAYBACK_NOT_INITIALIZED_ERROR);
             });
 
-            it('Method preload should throw an exception', function () {
-                expect(player.preload).to.throw(SOURCE_NOT_ATTACHED_ERROR);
-            });
         });
 
         describe('When it is initialized', function () {
@@ -560,7 +560,7 @@ describe('MediaPlayer', function () {
 
             it('should configure quality for type', function () {
                 let qualityFor = abrControllerMock.getQualityFor('video', {
-                    id: 'streamId'
+                    id: 'DUMMY_STREAM-01'
                 });
                 expect(qualityFor).to.equal(abrControllerMock.QUALITY_DEFAULT());
 
@@ -570,7 +570,7 @@ describe('MediaPlayer', function () {
                 player.setQualityFor('video', 10);
 
                 qualityFor = abrControllerMock.getQualityFor('video', {
-                    id: 'streamId'
+                    id: 'DUMMY_STREAM-01'
                 });
                 expect(qualityFor).to.equal(10);
 
@@ -586,6 +586,9 @@ describe('MediaPlayer', function () {
     });
 
     describe('Media Player Configuration Functions', function () {
+        beforeEach(function () {
+            customParametersModel.reset();
+        })
         afterEach(function () {
             mediaPlayerModel.reset();
             settings.reset();
@@ -601,168 +604,186 @@ describe('MediaPlayer', function () {
         });
 
         it('should configure LiveDelayFragmentCount', function () {
-            let liveDelayFragmentCount = player.getSettings().streaming.liveDelayFragmentCount;
+            let liveDelayFragmentCount = player.getSettings().streaming.delay.liveDelayFragmentCount;
             expect(liveDelayFragmentCount).to.be.NaN; // jshint ignore:line
 
-            player.updateSettings({'streaming': {'liveDelayFragmentCount': 5}});
+            player.updateSettings({ 'streaming': { 'delay': { 'liveDelayFragmentCount': 5 } } });
 
-            liveDelayFragmentCount = player.getSettings().streaming.liveDelayFragmentCount;
+            liveDelayFragmentCount = player.getSettings().streaming.delay.liveDelayFragmentCount;
             expect(liveDelayFragmentCount).to.equal(5);
         });
 
+        it('should configure liveDelay', function () {
+            let liveDelay = player.getSettings().streaming.delay.liveDelay;
+            expect(liveDelay).to.be.NaN; // jshint ignore:line
+
+            player.updateSettings({ 'streaming': { 'delay': { 'liveDelay': 10 } } });
+
+            liveDelay = player.getSettings().streaming.delay.liveDelay;
+            expect(liveDelay).to.equal(10);
+        });
+
         it('should configure useSuggestedPresentationDelay', function () {
-            let useSuggestedPresentationDelay = player.getSettings().streaming.useSuggestedPresentationDelay;
+            let useSuggestedPresentationDelay = player.getSettings().streaming.delay.useSuggestedPresentationDelay;
             expect(useSuggestedPresentationDelay).to.be.true; // jshint ignore:line
 
-            player.updateSettings({'streaming': {'useSuggestedPresentationDelay': false}});
+            player.updateSettings({ 'streaming': { 'delay': { 'useSuggestedPresentationDelay': false } } });
 
-            useSuggestedPresentationDelay = player.getSettings().streaming.useSuggestedPresentationDelay;
+            useSuggestedPresentationDelay = player.getSettings().streaming.delay.useSuggestedPresentationDelay;
             expect(useSuggestedPresentationDelay).to.be.false; // jshint ignore:line
         });
 
         it('should configure scheduleWhilePaused', function () {
-            let scheduleWhilePaused = player.getSettings().streaming.scheduleWhilePaused;
+            let scheduleWhilePaused = player.getSettings().streaming.scheduling.scheduleWhilePaused;
             expect(scheduleWhilePaused).to.be.true; // jshint ignore:line
 
-            player.updateSettings({'streaming': {'scheduleWhilePaused': false}});
+            player.updateSettings({ 'streaming': { scheduling: { 'scheduleWhilePaused': false } } });
 
-            scheduleWhilePaused = player.getSettings().streaming.scheduleWhilePaused;
+            scheduleWhilePaused = player.getSettings().streaming.scheduling.scheduleWhilePaused;
             expect(scheduleWhilePaused).to.be.false; // jshint ignore:line
         });
 
         it('should configure fastSwitchEnabled', function () {
-            let fastSwitchEnabled = player.getSettings().streaming.fastSwitchEnabled;
-            expect(fastSwitchEnabled).to.be.false; // jshint ignore:line
-
-            player.updateSettings({'streaming': {'fastSwitchEnabled': true}});
-
-            fastSwitchEnabled = player.getSettings().streaming.fastSwitchEnabled;
+            let fastSwitchEnabled = player.getSettings().streaming.buffer.fastSwitchEnabled;
             expect(fastSwitchEnabled).to.be.true; // jshint ignore:line
+
+            player.updateSettings({ 'streaming': { 'buffer': { 'fastSwitchEnabled': false } } });
+
+            fastSwitchEnabled = player.getSettings().streaming.buffer.fastSwitchEnabled;
+            expect(fastSwitchEnabled).to.be.false; // jshint ignore:line
         });
 
         it('should configure useDefaultABRRules', function () {
             let useDefaultABRRules = player.getSettings().streaming.abr.useDefaultABRRules;
             expect(useDefaultABRRules).to.be.true; // jshint ignore:line
 
-            player.updateSettings({'streaming': {'abr': {'useDefaultABRRules': false}}});
+            player.updateSettings({ 'streaming': { 'abr': { 'useDefaultABRRules': false } } });
 
 
             useDefaultABRRules = player.getSettings().streaming.abr.useDefaultABRRules;
             expect(useDefaultABRRules).to.be.false; // jshint ignore:line
         });
 
+        it('Method addABRCustomRule should throw an exception', function () {
+            expect(player.addABRCustomRule.bind(player, 'unknownRuleType', 'newRuleName')).to.throw(Constants.BAD_ARGUMENT_ERROR);
+            expect(player.addABRCustomRule.bind(player, true, 'newRuleName')).to.throw(Constants.BAD_ARGUMENT_ERROR);
+            expect(player.addABRCustomRule.bind(player, 1, 'string')).to.throw(Constants.BAD_ARGUMENT_ERROR);
+            expect(player.addABRCustomRule.bind(player, ABRRulesCollection.ABANDON_FRAGMENT_RULES, 1)).to.throw(Constants.BAD_ARGUMENT_ERROR);
+            expect(player.addABRCustomRule.bind(player, ABRRulesCollection.ABANDON_FRAGMENT_RULES, true)).to.throw(Constants.BAD_ARGUMENT_ERROR);
+        });
+
         it('should manage custom ABR rules', function () {
-            let customRules = mediaPlayerModel.getABRCustomRules();
+            let customRules = player.getABRCustomRules();
             expect(customRules.length).to.equal(0);
 
-            player.addABRCustomRule('custom', 'testRule', {});
+            player.addABRCustomRule('qualitySwitchRules', 'testRule', {});
 
-            customRules = mediaPlayerModel.getABRCustomRules();
+            customRules = player.getABRCustomRules();
             expect(customRules.length).to.equal(1);
             expect(customRules[0].rulename).to.equal('testRule');
 
-            player.addABRCustomRule('custom', 'testRule2', {});
-            player.addABRCustomRule('custom', 'testRule3', {});
-            customRules = mediaPlayerModel.getABRCustomRules();
+            player.addABRCustomRule('qualitySwitchRules', 'testRule2', {});
+            player.addABRCustomRule('qualitySwitchRules', 'testRule3', {});
+            customRules = player.getABRCustomRules();
             expect(customRules.length).to.equal(3);
 
             player.removeABRCustomRule('testRule');
 
-            customRules = mediaPlayerModel.getABRCustomRules();
+            customRules = player.getABRCustomRules();
             expect(customRules.length).to.equal(2);
 
             player.removeABRCustomRule();
 
-            customRules = mediaPlayerModel.getABRCustomRules();
+            customRules = player.getABRCustomRules();
             expect(customRules.length).to.equal(0);
         });
 
         it('should manage UTC timing sources', function () {
-            let utcTimingSources = mediaPlayerModel.getUTCTimingSources();
+            let utcTimingSources = customParametersModel.getUTCTimingSources();
             expect(utcTimingSources.length).to.equal(0);
 
             player.addUTCTimingSource('urn:mpeg:dash:utc:http-head:2014', 'http://time.akamai.com');
             player.addUTCTimingSource('urn:mpeg:dash:utc:http-iso:2014', 'http://time.akamai.com');
 
-            utcTimingSources = mediaPlayerModel.getUTCTimingSources();
+            utcTimingSources = customParametersModel.getUTCTimingSources();
             expect(utcTimingSources.length).to.equal(2);
 
             player.removeUTCTimingSource('urn:mpeg:dash:utc:http-head:2014', 'http://time.akamai.com');
 
-            utcTimingSources = mediaPlayerModel.getUTCTimingSources();
+            utcTimingSources = customParametersModel.getUTCTimingSources();
             expect(utcTimingSources.length).to.equal(1);
 
             player.clearDefaultUTCTimingSources();
-            utcTimingSources = mediaPlayerModel.getUTCTimingSources();
+            utcTimingSources = customParametersModel.getUTCTimingSources();
             expect(utcTimingSources.length).to.equal(0);
 
             player.restoreDefaultUTCTimingSources();
-            utcTimingSources = mediaPlayerModel.getUTCTimingSources();
+            utcTimingSources = customParametersModel.getUTCTimingSources();
             expect(utcTimingSources.length).to.equal(1);
         });
 
         it('should configure useManifestDateHeaderTimeSource', function () {
-            let useManifestDateHeaderTimeSource = player.getSettings().streaming.useManifestDateHeaderTimeSource;
+            let useManifestDateHeaderTimeSource = player.getSettings().streaming.utcSynchronization.useManifestDateHeaderTimeSource;
             expect(useManifestDateHeaderTimeSource).to.be.true; // jshint ignore:line
 
-            player.updateSettings({'streaming': {'useManifestDateHeaderTimeSource': false}});
+            player.updateSettings({ 'streaming': { utcSynchronization: { 'useManifestDateHeaderTimeSource': false } } });
 
-            useManifestDateHeaderTimeSource = player.getSettings().streaming.useManifestDateHeaderTimeSource;
+            useManifestDateHeaderTimeSource = player.getSettings().streaming.utcSynchronization.useManifestDateHeaderTimeSource;
             expect(useManifestDateHeaderTimeSource).to.be.false; // jshint ignore:line
         });
 
         it('should configure BufferToKeep', function () {
-            let BufferToKeep = player.getSettings().streaming.bufferToKeep;
+            let BufferToKeep = player.getSettings().streaming.buffer.bufferToKeep;
             expect(BufferToKeep).to.equal(20);
 
-            player.updateSettings({'streaming': {'bufferToKeep': 50}});
+            player.updateSettings({ 'streaming': { 'buffer': { 'bufferToKeep': 50 } } });
 
-            BufferToKeep = player.getSettings().streaming.bufferToKeep;
+            BufferToKeep = player.getSettings().streaming.buffer.bufferToKeep;
             expect(BufferToKeep).to.equal(50);
         });
 
         it('should configure BufferPruningInterval', function () {
-            let BufferPruningInterval = player.getSettings().streaming.bufferPruningInterval;
+            let BufferPruningInterval = player.getSettings().streaming.buffer.bufferPruningInterval;
             expect(BufferPruningInterval).to.equal(10);
 
-            player.updateSettings({'streaming': {'bufferPruningInterval': 50}});
+            player.updateSettings({ 'streaming': { 'buffer': { 'bufferPruningInterval': 50 } } });
 
-            BufferPruningInterval = player.getSettings().streaming.bufferPruningInterval;
+            BufferPruningInterval = player.getSettings().streaming.buffer.bufferPruningInterval;
             expect(BufferPruningInterval).to.equal(50);
         });
 
         it('should configure StableBufferTime', function () {
-            let StableBufferTime = player.getSettings().streaming.stableBufferTime;
+            let StableBufferTime = player.getSettings().streaming.buffer.stableBufferTime;
             expect(StableBufferTime).to.equal(12);
         });
 
         it('should configure BufferTimeAtTopQuality', function () {
-            let BufferTimeAtTopQuality = player.getSettings().streaming.bufferTimeAtTopQuality;
+            let BufferTimeAtTopQuality = player.getSettings().streaming.buffer.bufferTimeAtTopQuality;
             expect(BufferTimeAtTopQuality).to.equal(30);
 
-            player.updateSettings({'streaming': {'bufferTimeAtTopQuality': 50}});
+            player.updateSettings({ 'streaming': { 'buffer': { 'bufferTimeAtTopQuality': 50 } } });
 
-            BufferTimeAtTopQuality = player.getSettings().streaming.bufferTimeAtTopQuality;
+            BufferTimeAtTopQuality = player.getSettings().streaming.buffer.bufferTimeAtTopQuality;
             expect(BufferTimeAtTopQuality).to.equal(50);
         });
 
         it('should configure BufferTimeAtTopQualityLongForm', function () {
-            let bufferTimeAtTopQualityLongForm = player.getSettings().streaming.bufferTimeAtTopQualityLongForm;
+            let bufferTimeAtTopQualityLongForm = player.getSettings().streaming.buffer.bufferTimeAtTopQualityLongForm;
             expect(bufferTimeAtTopQualityLongForm).to.equal(60);
 
-            player.updateSettings({'streaming': {'bufferTimeAtTopQualityLongForm': 50}});
+            player.updateSettings({ 'streaming': { 'buffer': { 'bufferTimeAtTopQualityLongForm': 50 } } });
 
-            bufferTimeAtTopQualityLongForm = player.getSettings().streaming.bufferTimeAtTopQualityLongForm;
+            bufferTimeAtTopQualityLongForm = player.getSettings().streaming.buffer.bufferTimeAtTopQualityLongForm;
             expect(bufferTimeAtTopQualityLongForm).to.equal(50);
         });
 
         it('should configure LongFormContentDurationThreshold', function () {
-            let LongFormContentDurationThreshold = player.getSettings().streaming.longFormContentDurationThreshold;
+            let LongFormContentDurationThreshold = player.getSettings().streaming.buffer.longFormContentDurationThreshold;
             expect(LongFormContentDurationThreshold).to.equal(600);
 
-            player.updateSettings({'streaming': {'longFormContentDurationThreshold': 50}});
+            player.updateSettings({ 'streaming': { 'buffer': { 'longFormContentDurationThreshold': 50 } } });
 
-            LongFormContentDurationThreshold = player.getSettings().streaming.longFormContentDurationThreshold;
+            LongFormContentDurationThreshold = player.getSettings().streaming.buffer.longFormContentDurationThreshold;
             expect(LongFormContentDurationThreshold).to.equal(50);
         });
 
@@ -770,7 +791,7 @@ describe('MediaPlayer', function () {
             let cacheLoadThresholdForVideo = player.getSettings().streaming.cacheLoadThresholds[Constants.VIDEO];
             expect(cacheLoadThresholdForVideo).to.equal(50);
 
-            player.updateSettings({'streaming': {'cacheLoadThresholds': {'video': 10}}});
+            player.updateSettings({ 'streaming': { 'cacheLoadThresholds': { 'video': 10 } } });
 
             cacheLoadThresholdForVideo = player.getSettings().streaming.cacheLoadThresholds[Constants.VIDEO];
             expect(cacheLoadThresholdForVideo).to.equal(10);
@@ -778,35 +799,43 @@ describe('MediaPlayer', function () {
             let cacheLoadThresholdForAudio = player.getSettings().streaming.cacheLoadThresholds[Constants.AUDIO];
             expect(cacheLoadThresholdForAudio).to.equal(5);
 
-            player.updateSettings({'streaming': {'cacheLoadThresholds': {'audio': 2}}});
+            player.updateSettings({ 'streaming': { 'cacheLoadThresholds': { 'audio': 2 } } });
 
             cacheLoadThresholdForAudio = player.getSettings().streaming.cacheLoadThresholds[Constants.AUDIO];
             expect(cacheLoadThresholdForAudio).to.equal(2);
         });
 
         it('should configure jumpGap feature', function () {
-            let jumpGaps = player.getSettings().streaming.jumpGaps;
+            let jumpGaps = player.getSettings().streaming.gaps.jumpGaps;
             expect(jumpGaps).to.equal(true);
 
-            player.updateSettings({'streaming': {'jumpGaps': false}});
+            player.updateSettings({ 'streaming': { 'gaps': { 'jumpGaps': false } } });
 
-            jumpGaps = player.getSettings().streaming.jumpGaps;
+            jumpGaps = player.getSettings().streaming.gaps.jumpGaps;
             expect(jumpGaps).to.equal(false);
 
-            let smallGapLimit = player.getSettings().streaming.smallGapLimit;
+            let smallGapLimit = player.getSettings().streaming.gaps.smallGapLimit;
             expect(smallGapLimit).to.equal(1.5);
 
-            player.updateSettings({'streaming': {'smallGapLimit': 0.5}});
+            player.updateSettings({ 'streaming': { 'gaps': { 'smallGapLimit': 0.5 } } });
 
-            smallGapLimit = player.getSettings().streaming.smallGapLimit;
+            smallGapLimit = player.getSettings().streaming.gaps.smallGapLimit;
             expect(smallGapLimit).to.equal(0.5);
+
+            let jumpLargeGaps = player.getSettings().streaming.gaps.jumpLargeGaps;
+            expect(jumpLargeGaps).to.be.true;
+
+            player.updateSettings({ 'streaming': { 'gaps': { 'jumpLargeGaps': false } } });
+
+            jumpLargeGaps = player.getSettings().streaming.gaps.jumpLargeGaps;
+            expect(jumpLargeGaps).to.be.false;
         });
 
         it('should configure manifestUpdateRetryInterval', function () {
             let manifestUpdateRetryInterval = player.getSettings().streaming.manifestUpdateRetryInterval;
             expect(manifestUpdateRetryInterval).to.equal(100);
 
-            player.updateSettings({'streaming': {'manifestUpdateRetryInterval': 200}});
+            player.updateSettings({ 'streaming': { 'manifestUpdateRetryInterval': 200 } });
 
             manifestUpdateRetryInterval = player.getSettings().streaming.manifestUpdateRetryInterval;
             expect(manifestUpdateRetryInterval).to.equal(200);
@@ -843,7 +872,7 @@ describe('MediaPlayer', function () {
         });
 
         it('should configure XHRWithCredentials', function () {
-            let XHRWithCredentials = mediaPlayerModel.getXHRWithCredentialsForType('GET');
+            let XHRWithCredentials = customParametersModel.getXHRWithCredentialsForType('GET');
             expect(XHRWithCredentials).to.equal(false);
 
             XHRWithCredentials = player.getXHRWithCredentialsForType('GET');
@@ -851,7 +880,7 @@ describe('MediaPlayer', function () {
 
             player.setXHRWithCredentialsForType('GET', true);
 
-            XHRWithCredentials = mediaPlayerModel.getXHRWithCredentialsForType('GET');
+            XHRWithCredentials = customParametersModel.getXHRWithCredentialsForType('GET');
             expect(XHRWithCredentials).to.equal(true);
 
             XHRWithCredentials = player.getXHRWithCredentialsForType('GET');
@@ -865,17 +894,17 @@ describe('MediaPlayer', function () {
                 expect(player.setTextTrack).to.throw(PLAYBACK_NOT_INITIALIZED_ERROR);
             });
 
-            it('Method setTextDefaultLanguage should throw an invalid Arguments exception when lang is undefined', function () {
-                expect(player.setTextDefaultLanguage).to.throw(Constants.BAD_ARGUMENT_ERROR);
+            it('Method enableText should return false', function () {
+                const enabled = player.enableText();
+                expect(enabled).to.be.false; // jshint ignore:line
             });
 
-            it('Method setTextDefaultEnabled should throw an invalid Arguments exception when enable is undefined', function () {
-                expect(player.setTextDefaultEnabled).to.throw(Constants.BAD_ARGUMENT_ERROR);
+            it('Method isTextEnabled should return false', function () {
+                const enabled = player.isTextEnabled();
+                expect(enabled).to.be.false; // jshint ignore:line
             });
 
-            it('Method getTextDefaultEnabled should return false', function () {
-                expect(player.getTextDefaultEnabled()).to.be.false; // jshint ignore:line
-            });
+
         });
     });
 
@@ -982,22 +1011,6 @@ describe('MediaPlayer', function () {
                 expect(player.getInitialMediaSettingsFor).to.throw(MEDIA_PLAYER_NOT_INITIALIZED_ERROR);
             });
 
-            it('Method getTrackSwitchModeFor should throw an exception', function () {
-                expect(player.getTrackSwitchModeFor).to.throw(MEDIA_PLAYER_NOT_INITIALIZED_ERROR);
-            });
-
-            it('Method setTrackSwitchModeFor should throw an exception', function () {
-                expect(player.setTrackSwitchModeFor).to.throw(MEDIA_PLAYER_NOT_INITIALIZED_ERROR);
-            });
-
-            it('Method setSelectionModeForInitialTrack should throw an exception', function () {
-                expect(player.setSelectionModeForInitialTrack).to.throw(MEDIA_PLAYER_NOT_INITIALIZED_ERROR);
-            });
-
-            it('Method getSelectionModeForInitialTrack should throw an exception', function () {
-                expect(player.getSelectionModeForInitialTrack).to.throw(MEDIA_PLAYER_NOT_INITIALIZED_ERROR);
-            });
-
             it('Method getCurrentLiveLatency should throw an exception', function () {
                 expect(player.getCurrentLiveLatency).to.throw(MEDIA_PLAYER_NOT_INITIALIZED_ERROR);
             });
@@ -1041,8 +1054,8 @@ describe('MediaPlayer', function () {
                 initialSettings = player.getInitialMediaSettingsFor('audio');
                 expect(initialSettings).to.equal('settings');
 
-                player.setInitialMediaSettingsFor('fragmentedText', {lang: 'en', role: 'caption'});
-                initialSettings = player.getInitialMediaSettingsFor('fragmentedText');
+                player.setInitialMediaSettingsFor('text', { lang: 'en', role: 'caption' });
+                initialSettings = player.getInitialMediaSettingsFor('text');
                 expect(initialSettings).to.exist; // jshint ignore:line
                 expect(initialSettings.lang).to.equal('en');
                 expect(initialSettings.role).to.equal('caption');
@@ -1057,26 +1070,6 @@ describe('MediaPlayer', function () {
 
                 currentTrack = mediaControllerMock.isCurrentTrack('audio');
                 expect(currentTrack).to.be.true; // jshint ignore:line
-            });
-
-            it('should configure track switch mode', function () {
-                let trackSwitchMode = player.getTrackSwitchModeFor('audio');
-                expect(trackSwitchMode).to.not.exist; // jshint ignore:line
-
-                player.setTrackSwitchModeFor('audio', 'switch');
-
-                trackSwitchMode = player.getTrackSwitchModeFor('audio');
-                expect(trackSwitchMode).to.equal('switch');
-            });
-
-            it('should configure selection mode for initial track', function () {
-                let selectionMode = player.getSelectionModeForInitialTrack();
-                expect(selectionMode).to.not.exist; // jshint ignore:line
-
-                player.setSelectionModeForInitialTrack('mode');
-
-                selectionMode = player.getSelectionModeForInitialTrack();
-                expect(selectionMode).to.equal('mode');
             });
         });
     });

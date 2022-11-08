@@ -82,7 +82,7 @@ describe('DashManifestModel', function () {
         });
 
         it('should return 5 when getSuggestedPresentationDelay is called and mpd is an object with suggestedPresentationDelay attribute', () => {
-            const suggestedPresentationDelay = dashManifestModel.getSuggestedPresentationDelay({suggestedPresentationDelay: 5});
+            const suggestedPresentationDelay = dashManifestModel.getSuggestedPresentationDelay({ suggestedPresentationDelay: 5 });
 
             expect(suggestedPresentationDelay).to.be.equal(5);  // jshint ignore:line
         });
@@ -101,15 +101,9 @@ describe('DashManifestModel', function () {
 
         it('should return correct value when getAvailabilityStartTime is called and mpd is object with the availabilityStartTime attribute', () => {
             const now = new Date();
-            const availabilityStartTime = dashManifestModel.getAvailabilityStartTime({availabilityStartTime: now});
+            const availabilityStartTime = dashManifestModel.getAvailabilityStartTime({ availabilityStartTime: now });
 
             expect(availabilityStartTime).to.be.equal(now.getTime());  // jshint ignore:line
-        });
-
-        it('should return false when getIsTextTrack is called and type is undefined', () => {
-            const isTextTrack = dashManifestModel.getIsTextTrack();
-
-            expect(isTextTrack).to.be.false;  // jshint ignore:line
         });
 
         it('should return empty string when getLanguageForAdaptation is called and adaptation is undefined', () => {
@@ -152,28 +146,28 @@ describe('DashManifestModel', function () {
         });
 
         it('should return null when getAdaptationForId is called and id and periodIndex are undefined', () => {
-            const manifest = {Period_asArray: []};
+            const manifest = { Period_asArray: [] };
             const adaptation = dashManifestModel.getAdaptationForId(undefined, manifest, undefined);
 
             expect(adaptation).to.be.null;    // jshint ignore:line
         });
 
         it('should return null when getAdaptationForId is called and id is undefined', () => {
-            const manifest = {Period_asArray: []};
+            const manifest = { Period_asArray: [] };
             const adaptation = dashManifestModel.getAdaptationForId(undefined, manifest, 2);
 
             expect(adaptation).to.be.null;    // jshint ignore:line
         });
 
         it('should return null when getAdaptationForId is called and id is undefined and periodIndex = 0', () => {
-            const manifest = {Period_asArray: [{AdaptationSet_asArray: [{id: 0}]}]};
+            const manifest = { Period_asArray: [{ AdaptationSet_asArray: [{ id: 0 }] }] };
             const adaptation = dashManifestModel.getAdaptationForId(undefined, manifest, 0);
 
             expect(adaptation).to.be.null;    // jshint ignore:line
         });
 
         it('should return valid value when getAdaptationForId is called and id is 0 and periodIndex = 0', () => {
-            const manifest = {Period_asArray: [{AdaptationSet_asArray: [{id: 0}]}]};
+            const manifest = { Period_asArray: [{ AdaptationSet_asArray: [{ id: 0 }] }] };
             const adaptation = dashManifestModel.getAdaptationForId(0, manifest, 0);
 
             expect(adaptation.id).to.equal(0); // jshint ignore:line
@@ -186,28 +180,28 @@ describe('DashManifestModel', function () {
         });
 
         it('should return null when getAdaptationForIndex is called and id and periodIndex are undefined', () => {
-            const manifest = {Period_asArray: []};
+            const manifest = { Period_asArray: [] };
             const adaptation = dashManifestModel.getAdaptationForIndex(undefined, manifest, undefined);
 
             expect(adaptation).to.be.null;    // jshint ignore:line
         });
 
         it('should return null when getAdaptationForIndex is called and id is undefined', () => {
-            const manifest = {Period_asArray: []};
+            const manifest = { Period_asArray: [] };
             const adaptation = dashManifestModel.getAdaptationForIndex(undefined, manifest, 2);
 
             expect(adaptation).to.be.null;    // jshint ignore:line
         });
 
         it('should return null when getAdaptationForIndex is called and id is undefined and periodIndex = 0', () => {
-            const manifest = {Period_asArray: [{AdaptationSet_asArray: [{id: 0}]}]};
+            const manifest = { Period_asArray: [{ AdaptationSet_asArray: [{ id: 0 }] }] };
             const adaptation = dashManifestModel.getAdaptationForIndex(undefined, manifest, 0);
 
             expect(adaptation).to.be.null;    // jshint ignore:line
         });
 
         it('should return valid value when getAdaptationForIndex is called and id is 0 and periodIndex = 0', () => {
-            const manifest = {Period_asArray: [{AdaptationSet_asArray: [{id: 0}]}]};
+            const manifest = { Period_asArray: [{ AdaptationSet_asArray: [{ id: 0 }] }] };
             const adaptation = dashManifestModel.getAdaptationForIndex(0, manifest, 0);
 
             expect(adaptation.id).to.equal(0); // jshint ignore:line
@@ -220,7 +214,7 @@ describe('DashManifestModel', function () {
         });
 
         it('should return -1 when getIndexForAdaptation is called and manifest and periodIndex are undefined', () => {
-            const manifest = {Period_asArray: []};
+            const manifest = { Period_asArray: [] };
             var adaptation = mpdHelper.composeAdaptation('video');
             const index = dashManifestModel.getIndexForAdaptation(adaptation, manifest, undefined);
 
@@ -242,7 +236,7 @@ describe('DashManifestModel', function () {
         });
 
         it('should return an empty array when getAdaptationsForType is called and periodIndex and type are undefined', () => {
-            const manifest = {Period_asArray: []};
+            const manifest = { Period_asArray: [] };
             const adaptationsArray = dashManifestModel.getAdaptationsForType(manifest, undefined, undefined);
 
             expect(adaptationsArray).to.be.instanceOf(Array);    // jshint ignore:line
@@ -250,7 +244,7 @@ describe('DashManifestModel', function () {
         });
 
         it('should return an empty array when getAdaptationsForType is called and type is undefined', () => {
-            const manifest = {Period_asArray: [{AdaptationSet_asArray: [{id: 0}]}]};
+            const manifest = { Period_asArray: [{ AdaptationSet_asArray: [{ id: 0 }] }] };
 
             expect(dashManifestModel.getAdaptationsForType.bind(dashManifestModel, manifest, 0, undefined)).to.throw('type is not defined');
         });
@@ -268,13 +262,13 @@ describe('DashManifestModel', function () {
         });
 
         it('should return null when getCodec is called and adaptation.Representation_asArray.length is -1', () => {
-            const codec = dashManifestModel.getCodec({Representation_asArray: {length: -1}});
+            const codec = dashManifestModel.getCodec({ Representation_asArray: { length: -1 } });
 
             expect(codec).to.be.null;    // jshint ignore:line
         });
 
         it('should return null when getCodec is called and representationId is not an integer', () => {
-            const codec = dashManifestModel.getCodec({Representation_asArray: {length: 1}}, true);
+            const codec = dashManifestModel.getCodec({ Representation_asArray: { length: 1 } }, true);
 
             expect(codec).to.be.null;    // jshint ignore:line
         });
@@ -344,7 +338,7 @@ describe('DashManifestModel', function () {
         });
 
         it('should return null when getMimeType is called and adaptation.Representation_asArray.length is -1', () => {
-            const mimeType = dashManifestModel.getMimeType({Representation_asArray: {length: -1}});
+            const mimeType = dashManifestModel.getMimeType({ Representation_asArray: { length: -1 } });
 
             expect(mimeType).to.be.null;    // jshint ignore:line
         });
@@ -356,7 +350,7 @@ describe('DashManifestModel', function () {
         });
 
         it('should return kid value when getKID is called and adaptation is well defined', () => {
-            const kid = dashManifestModel.getKID({'cenc:default_KID': 'testKid'});
+            const kid = dashManifestModel.getKID({ 'cenc:default_KID': 'testKid' });
 
             expect(kid).to.equal('testKid');    // jshint ignore:line
         });
@@ -376,14 +370,14 @@ describe('DashManifestModel', function () {
         });
 
         it('should return empty array when getLabelsForAdaptation is called and adaptation is not well defined', () => {
-            const labels = dashManifestModel.getLabelsForAdaptation({Label_asArray: true});
+            const labels = dashManifestModel.getLabelsForAdaptation({ Label_asArray: true });
 
             expect(labels).to.be.instanceOf(Array);    // jshint ignore:line
             expect(labels).to.be.empty;                // jshint ignore:line
         });
 
         it('should return empty array when getLabelsForAdaptation is called and adaptation is well defined with an empty Label_asArray', () => {
-            const labels = dashManifestModel.getLabelsForAdaptation({Label_asArray: []});
+            const labels = dashManifestModel.getLabelsForAdaptation({ Label_asArray: [] });
 
             expect(labels).to.be.instanceOf(Array);    // jshint ignore:line
             expect(labels).to.be.empty;                // jshint ignore:line
@@ -394,7 +388,7 @@ describe('DashManifestModel', function () {
                 Label_asArray: [{
                     lang: 'fre',
                     __text: 'french'
-                }, {lang: 'eng', __text: 'english'}]
+                }, { lang: 'eng', __text: 'english' }]
             });
 
             expect(labels).to.be.instanceOf(Array);    // jshint ignore:line
@@ -409,7 +403,7 @@ describe('DashManifestModel', function () {
         });
 
         it('should return null when getContentProtectionData is called and adaptation is defined, but ContentProtection_asArray is an empty array', () => {
-            const adaptation = {ContentProtection_asArray: []};
+            const adaptation = { ContentProtection_asArray: [] };
             const contentProtection = dashManifestModel.getContentProtectionData(adaptation);
 
             expect(contentProtection).to.be.null;    // jshint ignore:line
@@ -428,13 +422,13 @@ describe('DashManifestModel', function () {
         });
 
         it('should return duration when getDuration is called and manifest has a defined mediaPresentationDuration', () => {
-            const duration = dashManifestModel.getDuration({mediaPresentationDuration: 50});
+            const duration = dashManifestModel.getDuration({ mediaPresentationDuration: 50 });
 
             expect(duration).to.equal(50); // jshint ignore:line
         });
 
         it('should return infinity when getDuration is called and manifest is a dynamic one', () => {
-            const duration = dashManifestModel.getDuration({type: DashConstants.DYNAMIC});
+            const duration = dashManifestModel.getDuration({ type: DashConstants.DYNAMIC });
 
             expect(duration).to.equal(Infinity); // jshint ignore:line
         });
@@ -452,7 +446,7 @@ describe('DashManifestModel', function () {
         });
 
         it('should return correct value when getBandwidth is called and representation is defined', () => {
-            const bdtw = dashManifestModel.getBandwidth({bandwidth: 9600});
+            const bdtw = dashManifestModel.getBandwidth({ bandwidth: 9600 });
 
             expect(bdtw).to.equal(9600); // jshint ignore:line
         });
@@ -465,7 +459,7 @@ describe('DashManifestModel', function () {
         });
 
         it('should not return empty array when getBitrateListForAdaptation is called and adaptation is defined', () => {
-            const realAdaptation = {Representation_asArray: [{}]};
+            const realAdaptation = { Representation_asArray: [{}] };
 
             const bitrateList = dashManifestModel.getBitrateListForAdaptation(realAdaptation);
 
@@ -513,7 +507,7 @@ describe('DashManifestModel', function () {
         });
 
         it('should return valid location when getLocation is called and manifest is a valid object', () => {
-            const location = dashManifestModel.getLocation({Location: '', Location_asArray: ['location_1']});
+            const location = dashManifestModel.getLocation({ Location: '', Location_asArray: ['location_1'] });
 
             expect(location).to.be.equal('location_1'); // jshint ignore:line
         });
@@ -564,26 +558,26 @@ describe('DashManifestModel', function () {
                 Period: [
                     {
                         'id': '153199',
-                        AdaptationSet: [{Representation: [{InbandEventStream: []}]}]
+                        AdaptationSet: [{ Representation: [{ InbandEventStream: [] }] }]
                     },
                     {
                         'id': '153202',
-                        AdaptationSet: [{Representation: [{InbandEventStream: []}]}]
+                        AdaptationSet: [{ Representation: [{ InbandEventStream: [] }] }]
                     }
                 ],
                 Period_asArray: [
                     {
                         'id': '153199',
-                        AdaptationSet_asArray: [{Representation_asArray: [{InbandEventStream_asArray: []}]}]
+                        AdaptationSet_asArray: [{ Representation_asArray: [{ InbandEventStream_asArray: [] }] }]
                     },
                     {
                         'id': '153202',
-                        AdaptationSet_asArray: [{Representation_asArray: [{InbandEventStream_asArray: []}]}]
+                        AdaptationSet_asArray: [{ Representation_asArray: [{ InbandEventStream_asArray: [] }] }]
                     }
                 ],
                 'type': 'static'
             };
-            const representation = {adaptation: {index: 0, period: {index: 0}}, index: 0};
+            const representation = { adaptation: { index: 0, period: { index: 0 } }, index: 0 };
             const eventsStream = dashManifestModel.getEventStreamForRepresentation(manifest, representation);
 
             expect(eventsStream).to.be.instanceOf(Array);    // jshint ignore:line
@@ -908,7 +902,7 @@ describe('DashManifestModel', function () {
         it('should return valid value when minimumUpdatePeriod is present in manifest and latencyOfLastUpdate is defined', () => {
             const minimumUpdatePeriod = 30;
             const latencyOfLastUpdate = 0.5;
-            const manifest = {minimumUpdatePeriod: minimumUpdatePeriod};
+            const manifest = { minimumUpdatePeriod: minimumUpdatePeriod };
             const expectedResult = minimumUpdatePeriod - latencyOfLastUpdate;
             const updatePeriod = dashManifestModel.getManifestUpdatePeriod(manifest, latencyOfLastUpdate);
             expect(updatePeriod).to.equal(expectedResult); // jshint ignore:line
@@ -916,7 +910,7 @@ describe('DashManifestModel', function () {
 
         it('should return valid value when minimumUpdatePeriod is present in manifest and latencyOfLastUpdate is not defined', () => {
             const minimumUpdatePeriod = 30;
-            const manifest = {minimumUpdatePeriod: minimumUpdatePeriod};
+            const manifest = { minimumUpdatePeriod: minimumUpdatePeriod };
             const expectedResult = minimumUpdatePeriod;
             const updatePeriod = dashManifestModel.getManifestUpdatePeriod(manifest);
             expect(updatePeriod).to.equal(expectedResult); // jshint ignore:line
@@ -1112,5 +1106,233 @@ describe('DashManifestModel', function () {
                 expect(obj[0].url).to.equal(TEST_URL);                              // jshint ignore:line
             });
         });
+
+        describe('getProducerReferenceTimesForAdaptation', () => {
+            it('returns an empty Array when no ProducerReferenceTimes are present on a node', () => {
+                const node = {};
+
+                const obj = dashManifestModel.getProducerReferenceTimesForAdaptation(node);
+
+                expect(obj).to.be.instanceOf(Array);    // jshint ignore:line
+                expect(obj).to.be.empty;                // jshint ignore:line
+            });
+
+            it('returns an empty Array where a single ProducerReferenceTime element on a node has missing mandatory attributes', () => {
+                const node = {
+                    [DashConstants.PRODUCERREFERENCETIME_ASARRAY]: [
+                        {
+                            [DashConstants.ID]: 4,
+                            [DashConstants.WALL_CLOCK_TIME]: '1970-01-01T00:00:00Z'
+                            // missing presentationTime
+                        }
+                    ]
+                };
+
+                const obj = dashManifestModel.getProducerReferenceTimesForAdaptation(node);
+
+                expect(obj).to.be.instanceOf(Array);    // jshint ignore:line
+                expect(obj).to.be.empty;                // jshint ignore:line
+            });
+
+            it('returns an Array of ProducerReferenceTime elements with mandatory attributes', () => {
+                const node = {
+                    [DashConstants.PRODUCERREFERENCETIME_ASARRAY]: [
+                        {
+                            [DashConstants.ID]: 4,
+                            [DashConstants.WALL_CLOCK_TIME]: '1970-01-01T00:00:04Z',
+                            [DashConstants.PRESENTATION_TIME]: 0
+                        },
+                        {
+                            [DashConstants.ID]: 5,
+                            [DashConstants.WALL_CLOCK_TIME]: '1970-01-01T00:00:05Z',
+                            [DashConstants.PRESENTATION_TIME]: 1
+                        }
+                    ]
+                };
+                const obj = dashManifestModel.getProducerReferenceTimesForAdaptation(node);
+
+                /* jshint ignore:start */
+                expect(obj).to.be.instanceOf(Array);
+                expect(obj).to.have.lengthOf(2);
+                expect(obj[0][DashConstants.ID]).to.equal(4);
+                expect(obj[0][DashConstants.WALL_CLOCK_TIME]).to.equal('1970-01-01T00:00:04Z');
+                expect(obj[0][DashConstants.PRESENTATION_TIME]).to.equal(0);
+                expect(obj[1][DashConstants.ID]).to.equal(5);
+                expect(obj[1][DashConstants.WALL_CLOCK_TIME]).to.equal('1970-01-01T00:00:05Z');
+                expect(obj[1][DashConstants.PRESENTATION_TIME]).to.equal(1);
+                /* jshint ignore:end */
+            });
+
+            it('returns ProducerReferenceTimes with correct default attribute values', () => {
+                const node = {
+                    [DashConstants.PRODUCERREFERENCETIME_ASARRAY]: [
+                        {
+                            [DashConstants.ID]: 4,
+                            [DashConstants.WALL_CLOCK_TIME]: '1970-01-01T00:00:04Z',
+                            [DashConstants.PRESENTATION_TIME]: 0
+                        }
+                    ]
+                };
+                const obj = dashManifestModel.getProducerReferenceTimesForAdaptation(node);
+
+                expect(obj).to.be.instanceOf(Array);        // jshint ignore:line
+                expect(obj).to.have.lengthOf(1);            // jshint ignore:line
+                expect(obj[0].type).to.equal('encoder');    // jshint ignore:line
+            });
+
+            it('returns ProducerReferenceTimes within representations', () => {
+                const node = {
+                    [DashConstants.REPRESENTATION_ASARRAY]: [
+                        {
+                            [DashConstants.PRODUCERREFERENCETIME_ASARRAY]: [
+                                {
+                                    [DashConstants.ID]: 1,
+                                    [DashConstants.WALL_CLOCK_TIME]: '1970-01-01T00:00:01Z',
+                                    [DashConstants.PRESENTATION_TIME]: 0
+                                }
+                            ]
+                        },
+                        {
+                            [DashConstants.PRODUCERREFERENCETIME_ASARRAY]: [
+                                {
+                                    [DashConstants.ID]: 2,
+                                    [DashConstants.WALL_CLOCK_TIME]: '1970-01-01T00:00:02Z',
+                                    [DashConstants.PRESENTATION_TIME]: 1
+                                }
+                            ]
+                        },
+                    ]
+                };
+                const obj = dashManifestModel.getProducerReferenceTimesForAdaptation(node);
+                /* jshint ignore:start */
+                expect(obj).to.be.instanceOf(Array);
+                expect(obj).to.have.lengthOf(2);
+                expect(obj[0][DashConstants.ID]).to.equal(1);
+                expect(obj[0][DashConstants.WALL_CLOCK_TIME]).to.equal('1970-01-01T00:00:01Z');
+                expect(obj[0][DashConstants.PRESENTATION_TIME]).to.equal(0);
+                expect(obj[1][DashConstants.ID]).to.equal(2);
+                expect(obj[1][DashConstants.WALL_CLOCK_TIME]).to.equal('1970-01-01T00:00:02Z');
+                expect(obj[1][DashConstants.PRESENTATION_TIME]).to.equal(1);
+                /* jshint ignore:end */
+
+            });
+
+            it('returns ProducerReferenceTimes at both AdaptationSet and Representation level', () => {
+                const node = {
+                    [DashConstants.PRODUCERREFERENCETIME_ASARRAY]: [
+                        {
+                            [DashConstants.ID]: 1,
+                            [DashConstants.WALL_CLOCK_TIME]: '1970-01-01T00:00:01Z',
+                            [DashConstants.PRESENTATION_TIME]: 1
+                        }
+                    ],
+                    [DashConstants.REPRESENTATION_ASARRAY]: [
+                        {
+                            [DashConstants.PRODUCERREFERENCETIME_ASARRAY]: [
+                                {
+                                    [DashConstants.ID]: 2,
+                                    [DashConstants.WALL_CLOCK_TIME]: '1970-01-01T00:00:02Z',
+                                    [DashConstants.PRESENTATION_TIME]: 2
+                                }
+                            ]
+                        }
+                    ]
+                };
+                const obj = dashManifestModel.getProducerReferenceTimesForAdaptation(node);
+                /* jshint ignore:start */
+                expect(obj).to.be.instanceOf(Array);
+                expect(obj).to.have.lengthOf(2);
+                expect(obj[0][DashConstants.ID]).to.equal(1);
+                expect(obj[0][DashConstants.WALL_CLOCK_TIME]).to.equal('1970-01-01T00:00:01Z');
+                expect(obj[0][DashConstants.PRESENTATION_TIME]).to.equal(1);
+                expect(obj[1][DashConstants.ID]).to.equal(2);
+                expect(obj[1][DashConstants.WALL_CLOCK_TIME]).to.equal('1970-01-01T00:00:02Z');
+                expect(obj[1][DashConstants.PRESENTATION_TIME]).to.equal(2);
+                /* jshint ignore:end */
+            });
+
+        });
+
+
+        describe('getSelectionPriority', () => {
+
+            it('should return 1 when adaptation is not defined', () => {
+                const priority = dashManifestModel.getSelectionPriority();
+
+                expect(priority).to.equal(1);
+            })
+
+            it('should return 1 when adaptation does not have field selectionPriority', () => {
+                const priority = dashManifestModel.getSelectionPriority({});
+
+                expect(priority).to.equal(1);
+            })
+
+            it('should return 1 when selectionPriority is not a number', () => {
+                const priority = dashManifestModel.getSelectionPriority({ selectionPriority: 'xy' });
+
+                expect(priority).to.equal(1);
+            })
+
+            it('should return valid selectionPriority', () => {
+                const priority = dashManifestModel.getSelectionPriority({ selectionPriority: '5' });
+
+                expect(priority).to.equal(5);
+            })
+        })
+
+        describe('getContentSteering', () => {
+
+            it('should return undefined if no manifest is given', () => {
+                expect(dashManifestModel.getContentSteering()).to.be.undefined;
+            })
+
+            it('should return undefined if manifest is given but no content steering data is present', () => {
+                expect(dashManifestModel.getContentSteering({})).to.be.undefined;
+            })
+
+            it('should return content steering data from manifest', () => {
+                const manifestData = {
+                    ContentSteering_asArray: [
+                        {
+                            'defaultServiceLocation': 'beta',
+                            'queryBeforeStart': 'true',
+                            'proxyServerURL': 'http://someUrl',
+                            '__text': 'http://localhost:3333/content-steering'
+                        }
+                    ]
+                }
+                const data = dashManifestModel.getContentSteering(manifestData);
+                expect(data.defaultServiceLocation).to.be.equal('beta');
+                expect(data.queryBeforeStart).to.be.true;
+                expect(data.proxyServerUrl).to.be.equal('http://someUrl');
+                expect(data.serverUrl).to.be.equal('http://localhost:3333/content-steering');
+            })
+
+            it('should return first content steering element from manifest if multiple elements are present', () => {
+                const manifestData = {
+                    ContentSteering_asArray: [
+                        {
+                            'defaultServiceLocation': 'beta',
+                            'queryBeforeStart': 'true',
+                            'proxyServerURL': 'http://someUrl',
+                            '__text': 'http://localhost:3333/content-steering'
+                        },
+                        {
+                            'defaultServiceLocation': 'alpha',
+                            'queryBeforeStart': 'false',
+                            'proxyServerURL': 'http://someUrl2',
+                            '__text': 'http://localhost:3333/content-steering/2'
+                        }
+                    ]
+                }
+                const data = dashManifestModel.getContentSteering(manifestData);
+                expect(data.defaultServiceLocation).to.be.equal('beta');
+                expect(data.queryBeforeStart).to.be.true;
+                expect(data.proxyServerUrl).to.be.equal('http://someUrl');
+                expect(data.serverUrl).to.be.equal('http://localhost:3333/content-steering');
+            })
+
+        })
     });
 });

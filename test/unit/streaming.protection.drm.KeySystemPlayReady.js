@@ -1,15 +1,20 @@
 import KeySystemPlayReady from '../../src/streaming/protection/drm/KeySystemPlayReady.js';
 import BASE64 from '../../externals/base64';
+import Settings from '../../src/core/Settings';
 
 const expect = require('chai').expect;
 const jsdom = require('jsdom').JSDOM;
 
 describe('KeySystemPlayready', function () {
 
+
     let  context = {};
+    let settings = Settings(context).getInstance();
     let keySystem,
         DOMParser;
     let cdmData = null;
+
+
 
     const protData = {
         cdmData: '2lfuDn3JoEo0dM324cA5tSv1gNNw65mgysBqNJqtxGUk7ShUOE03N6LK0cryu2roCQtDghmF7cC6xyt1WTA86CmrUNFRjo1tcxQtTVEW9Xw68pH7/yU2GbtK4zbctx49sffi4fYy8fGEUB5079CesBONxoKli5j2ADM8CWz93a5mYegZWraOq3EH0nvwvRXZ'
@@ -50,7 +55,7 @@ describe('KeySystemPlayready', function () {
 
     describe('Well initialized', () => {
         beforeEach(function () {
-            keySystem = KeySystemPlayReady(context).getInstance({BASE64: BASE64});
+            keySystem = KeySystemPlayReady(context).getInstance({BASE64: BASE64, settings: settings});
             if (typeof DOMParser === 'undefined') {
                 global.DOMParser = new jsdom().window.DOMParser;
             }
@@ -69,11 +74,6 @@ describe('KeySystemPlayready', function () {
 
         it('should not throw an exception when messageformat is supported', function () {
             expect(keySystem.setPlayReadyMessageFormat.bind(keySystem, 'utf-8')).not.to.throw('Specified message format is not one of "utf-8" or "utf-16"');
-        });
-
-        it('should return null when getSessionId is called and protData is undefined', function () {
-            const sessionId = keySystem.getSessionId();
-            expect(sessionId).to.be.null;   // jshint ignore:line
         });
 
         it('should return null when getCDMData is called and protData is undefined', function () {
@@ -102,8 +102,7 @@ describe('KeySystemPlayready', function () {
         });
 
         it('should return the correct cdmData', function () {
-            keySystem.init(protData);
-            cdmData = keySystem.getCDMData();
+            cdmData = keySystem.getCDMData(protData.cdmData);
             expect(keySystem).to.be.defined;   // jshint ignore:line
             expect(cdmData).to.be.not.null;   // jshint ignore:line
             expect(cdmData).to.be.instanceOf(ArrayBuffer);

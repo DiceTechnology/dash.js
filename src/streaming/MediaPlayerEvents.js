@@ -70,6 +70,12 @@ class MediaPlayerEvents extends EventsBase {
         this.BUFFER_LEVEL_STATE_CHANGED = 'bufferStateChanged';
 
         /**
+         * Triggered when the buffer level of a media type has been updated
+         * @event MediaPlayerEvents#BUFFER_LEVEL_UPDATED
+         */
+        this.BUFFER_LEVEL_UPDATED = 'bufferLevelUpdated';
+
+        /**
          * Triggered when a dynamic stream changed to static (transition phase between Live and On-Demand).
          * @event MediaPlayerEvents#DYNAMIC_TO_STATIC
          */
@@ -109,7 +115,6 @@ class MediaPlayerEvents extends EventsBase {
          */
         this.LOG = 'log';
 
-        //TODO refactor with internal event
         /**
          * Triggered when the manifest load is complete
          * @event MediaPlayerEvents#MANIFEST_LOADED
@@ -141,16 +146,16 @@ class MediaPlayerEvents extends EventsBase {
         this.METRIC_UPDATED = 'metricUpdated';
 
         /**
+         * Triggered when a new stream (period) starts.
+         * @event MediaPlayerEvents#PERIOD_SWITCH_STARTED
+         */
+        this.PERIOD_SWITCH_STARTED = 'periodSwitchStarted';
+
+        /**
          * Triggered at the stream end of a period.
          * @event MediaPlayerEvents#PERIOD_SWITCH_COMPLETED
          */
         this.PERIOD_SWITCH_COMPLETED = 'periodSwitchCompleted';
-
-        /**
-         * Triggered when a new period starts.
-         * @event MediaPlayerEvents#PERIOD_SWITCH_STARTED
-         */
-        this.PERIOD_SWITCH_STARTED = 'periodSwitchStarted';
 
         /**
          * Triggered when an ABR up /down switch is initiated; either by user in manual mode or auto mode via ABR rules.
@@ -171,12 +176,6 @@ class MediaPlayerEvents extends EventsBase {
         this.TRACK_CHANGE_RENDERED = 'trackChangeRendered';
 
         /**
-         * Triggered when the source is setup and ready.
-         * @event MediaPlayerEvents#SOURCE_INITIALIZED
-         */
-        this.SOURCE_INITIALIZED = 'sourceInitialized';
-
-        /**
          * Triggered when a stream (period) is being loaded
          * @event MediaPlayerEvents#STREAM_INITIALIZING
          */
@@ -189,7 +188,19 @@ class MediaPlayerEvents extends EventsBase {
         this.STREAM_UPDATED = 'streamUpdated';
 
         /**
-         * Triggered when a stream (period) is updated
+         * Triggered when a stream (period) is activated
+         * @event MediaPlayerEvents#STREAM_ACTIVATED
+         */
+        this.STREAM_ACTIVATED = 'streamActivated';
+
+        /**
+         * Triggered when a stream (period) is deactivated
+         * @event MediaPlayerEvents#STREAM_DEACTIVATED
+         */
+        this.STREAM_DEACTIVATED = 'streamDeactivated';
+
+        /**
+         * Triggered when a stream (period) is activated
          * @event MediaPlayerEvents#STREAM_INITIALIZED
          */
         this.STREAM_INITIALIZED = 'streamInitialized';
@@ -245,6 +256,12 @@ class MediaPlayerEvents extends EventsBase {
         this.CAN_PLAY = 'canPlay';
 
         /**
+         * This corresponds to the CAN_PLAY_THROUGH readyState.
+         * @event MediaPlayerEvents#CAN_PLAY_THROUGH
+         */
+        this.CAN_PLAY_THROUGH = 'canPlayThrough';
+
+        /**
          * Sent when playback completes.
          * @event MediaPlayerEvents#PLAYBACK_ENDED
          */
@@ -269,6 +286,13 @@ class MediaPlayerEvents extends EventsBase {
          * @event MediaPlayerEvents#PLAYBACK_METADATA_LOADED
          */
         this.PLAYBACK_METADATA_LOADED = 'playbackMetaDataLoaded';
+
+        /**
+         * The event is fired when the frame at the current playback position of the media has finished loading;
+         * often the first frame
+         * @event MediaPlayerEvents#PLAYBACK_LOADED_DATA
+         */
+        this.PLAYBACK_LOADED_DATA = 'playbackLoadedData';
 
         /**
          * Sent when playback is paused.
@@ -311,12 +335,6 @@ class MediaPlayerEvents extends EventsBase {
         this.PLAYBACK_SEEKING = 'playbackSeeking';
 
         /**
-         * Sent when a seek operation has been asked.
-         * @event MediaPlayerEvents#PLAYBACK_SEEK_ASKED
-         */
-        this.PLAYBACK_SEEK_ASKED = 'playbackSeekAsked';
-
-        /**
          * Sent when the video element reports stalled
          * @event MediaPlayerEvents#PLAYBACK_STALLED
          */
@@ -337,6 +355,12 @@ class MediaPlayerEvents extends EventsBase {
         this.PLAYBACK_TIME_UPDATED = 'playbackTimeUpdated';
 
         /**
+         * Sent when the video element reports that the volume has changed
+         * @event MediaPlayerEvents#PLAYBACK_VOLUME_CHANGED
+         */
+        this.PLAYBACK_VOLUME_CHANGED = 'playbackVolumeChanged';
+
+        /**
          * Sent when the media playback has stopped because of a temporary lack of data.
          *
          * @event MediaPlayerEvents#PLAYBACK_WAITING
@@ -348,18 +372,6 @@ class MediaPlayerEvents extends EventsBase {
          * @event MediaPlayerEvents#MANIFEST_VALIDITY_CHANGED
          */
         this.MANIFEST_VALIDITY_CHANGED = 'manifestValidityChanged';
-
-        /**
-         * A gap occured in the timeline which requires a seek to the next period
-         * @event MediaPlayerEvents#GAP_CAUSED_SEEK_TO_PERIOD_END
-         */
-        this.GAP_CAUSED_SEEK_TO_PERIOD_END = 'gapCausedSeekToPeriodEnd';
-
-        /**
-         * A gap occured in the timeline which requires an internal seek
-         * @event MediaPlayerEvents#GAP_CAUSED_INTERNAL_SEEK
-         */
-        this.GAP_CAUSED_INTERNAL_SEEK = 'gapCausedInternalSeek';
 
         /**
          * Dash events are triggered at their respective start points on the timeline.
@@ -378,6 +390,23 @@ class MediaPlayerEvents extends EventsBase {
          * @event MediaPlayerEvents#CONFORMANCE_VIOLATION
          */
         this.CONFORMANCE_VIOLATION = 'conformanceViolation';
+
+        /**
+         * Event that is dispatched whenever the player switches to a different representation
+         * @event MediaPlayerEvents#REPRESENTATION_SWITCH
+         */
+        this.REPRESENTATION_SWITCH = 'representationSwitch';
+
+        /**
+         * Event that is dispatched whenever an adaptation set is removed due to all representations not being supported.
+         * @event MediaPlayerEvents#ADAPTATION_SET_REMOVED_NO_CAPABILITIES
+         */
+        this.ADAPTATION_SET_REMOVED_NO_CAPABILITIES = 'adaptationSetRemovedNoCapabilities';
+        /**
+         * Triggered when a content steering request has completed.
+         * @event MediaPlayerEvents#CONTENT_STEERING_REQUEST_COMPLETED
+         */
+        this.CONTENT_STEERING_REQUEST_COMPLETED = 'contentSteeringRequestCompleted';
     }
 }
 

@@ -31,13 +31,13 @@
 import Constants from '../constants/Constants';
 import MetricsConstants from '../constants/MetricsConstants';
 import MetricsList from '../vo/MetricsList';
-import { HTTPRequest, HTTPRequestTrace } from '../vo/metrics/HTTPRequest';
+import {HTTPRequest, HTTPRequestTrace} from '../vo/metrics/HTTPRequest';
 import TrackSwitch from '../vo/metrics/RepresentationSwitch';
 import BufferLevel from '../vo/metrics/BufferLevel';
 import BufferState from '../vo/metrics/BufferState';
 import DVRInfo from '../vo/metrics/DVRInfo';
 import DroppedFrames from '../vo/metrics/DroppedFrames';
-import { ManifestUpdate, ManifestUpdateStreamInfo, ManifestUpdateRepresentationInfo } from '../vo/metrics/ManifestUpdate';
+import {ManifestUpdate, ManifestUpdateStreamInfo, ManifestUpdateRepresentationInfo} from '../vo/metrics/ManifestUpdate';
 import SchedulingInfo from '../vo/metrics/SchedulingInfo';
 import EventBus from '../../core/EventBus';
 import RequestsQueue from '../vo/metrics/RequestsQueue';
@@ -110,7 +110,7 @@ function MetricsModel(config) {
         let metrics = getMetricsFor(type);
         if (metrics !== null) {
             metrics[list].push(value);
-            if ( metrics[list].length > settings.get().streaming.metricsMaxListDepth ) {
+            if (metrics[list].length > settings.get().streaming.metrics.maxListDepth) {
                 metrics[list].shift();
             }
         }
@@ -134,7 +134,7 @@ function MetricsModel(config) {
         return vo;
     }
 
-    function addHttpRequest(mediaType, tcpid, type, url, quality, actualurl, serviceLocation, range, trequest, tresponse, tfinish, responsecode, mediaduration, responseHeaders, traces) {
+    function addHttpRequest(mediaType, tcpid, type, url, quality, actualurl, serviceLocation, range, trequest, tresponse, tfinish, responsecode, mediaduration, responseHeaders, traces, fileLoaderType) {
         let vo = new HTTPRequest();
 
         // ISO 23009-1 D.4.3 NOTE 2:
@@ -162,7 +162,8 @@ function MetricsModel(config) {
                 null, // unknown, probably a 302
                 mediaduration,
                 null,
-                null
+                null,
+                fileLoaderType
             );
 
             vo.actualurl = actualurl;
@@ -182,6 +183,7 @@ function MetricsModel(config) {
         vo._quality = quality;
         vo._responseHeaders = responseHeaders;
         vo._serviceLocation = serviceLocation;
+        vo._fileLoaderType = fileLoaderType;
 
         if (traces) {
             traces.forEach(trace => {
@@ -235,7 +237,7 @@ function MetricsModel(config) {
 
     function addDVRInfo(mediaType, currentTime, mpd, range) {
         let vo = new DVRInfo();
-        vo.time = currentTime ;
+        vo.time = currentTime;
         vo.range = range;
         vo.manifestInfo = mpd;
 

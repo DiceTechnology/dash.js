@@ -6,6 +6,7 @@ import Events from '../../src/core/events/Events';
 import Settings from '../../src/core/Settings';
 
 import DomStorageMock from './mocks/DomStorageMock';
+import CustomParametersModel from '../../src/streaming/models/CustomParametersModel';
 
 const expect = require('chai').expect;
 const context = {};
@@ -17,6 +18,7 @@ describe('MediaController', function () {
     let domStorageMock;
     const trackType = Constants.AUDIO;
     const settings = Settings(context).getInstance();
+    const customParametersModel = CustomParametersModel(context).getInstance();
 
     beforeEach(function () {
 
@@ -24,15 +26,15 @@ describe('MediaController', function () {
         mediaController = MediaController(context).getInstance();
         mediaController.setConfig({
             domStorage: domStorageMock,
-            settings: settings
+            settings: settings,
+            customParametersModel
         });
 
     });
 
     afterEach(function () {
+        settings.reset();
         mediaController.reset();
-        mediaController.setSwitchMode('video', Constants.TRACK_SWITCH_MODE_NEVER_REPLACE);
-        mediaController.setSwitchMode('audio', Constants.TRACK_SWITCH_MODE_ALWAYS_REPLACE);
         mediaController = null;
     });
 
@@ -66,104 +68,6 @@ describe('MediaController', function () {
             settings = mediaController.getInitialSettings('test');
             expect(settings).to.equal('testvalue');
         });
-    });
-
-    describe('Switch Mode', function () {
-        it('should not set switch mode if mode is not supported', function () {
-            let switchmode = mediaController.getSwitchMode('video');
-            expect(switchmode).to.equal(Constants.TRACK_SWITCH_MODE_NEVER_REPLACE);
-
-            mediaController.setSwitchMode('video', 'unsupported');
-
-            switchmode = mediaController.getSwitchMode('video');
-            expect(switchmode).to.equal(Constants.TRACK_SWITCH_MODE_NEVER_REPLACE);
-        });
-
-        it('should not set switch mode if type is not supported', function () {
-            let switchmode = mediaController.getSwitchMode('test');
-            expect(switchmode).to.not.exist; // jshint ignore:line
-
-            mediaController.setSwitchMode('test', Constants.TRACK_SWITCH_MODE_NEVER_REPLACE);
-
-            switchmode = mediaController.getSwitchMode('test');
-            expect(switchmode).to.not.exist; // jshint ignore:line
-        });
-
-        it('should set and get switch mode for video', function () {
-            let switchmode = mediaController.getSwitchMode('video');
-            expect(switchmode).to.equal(Constants.TRACK_SWITCH_MODE_NEVER_REPLACE);
-
-            mediaController.setSwitchMode('video', Constants.TRACK_SWITCH_MODE_ALWAYS_REPLACE);
-
-            switchmode = mediaController.getSwitchMode('video');
-
-            expect(switchmode).to.equal(Constants.TRACK_SWITCH_MODE_ALWAYS_REPLACE);
-
-        });
-
-        it('should set and get switch mode for audio', function () {
-            let switchmode = mediaController.getSwitchMode('audio');
-            expect(switchmode).to.equal(Constants.TRACK_SWITCH_MODE_ALWAYS_REPLACE);
-
-            mediaController.setSwitchMode('audio', Constants.TRACK_SWITCH_MODE_NEVER_REPLACE);
-
-            switchmode = mediaController.getSwitchMode('audio');
-
-            expect(switchmode).to.equal(Constants.TRACK_SWITCH_MODE_NEVER_REPLACE);
-
-        });
-    });
-
-    describe('Selection Mode For Initial Track', function () {
-        it('should not set selection mode if mode is not supported', function () {
-            let mode = mediaController.getSelectionModeForInitialTrack();
-            expect(mode).to.equal(Constants.TRACK_SELECTION_MODE_HIGHEST_BITRATE);
-
-            mediaController.setSelectionModeForInitialTrack('unsupported');
-
-            mode = mediaController.getSelectionModeForInitialTrack();
-            expect(mode).to.equal(Constants.TRACK_SELECTION_MODE_HIGHEST_BITRATE);
-        });
-
-        it('should set and get selection mode', function () {
-            let mode = mediaController.getSelectionModeForInitialTrack();
-            expect(mode).to.equal(Constants.TRACK_SELECTION_MODE_HIGHEST_BITRATE);
-
-            mediaController.setSelectionModeForInitialTrack(Constants.TRACK_SELECTION_MODE_WIDEST_RANGE);
-
-            mode = mediaController.getSelectionModeForInitialTrack();
-            expect(mode).to.equal(Constants.TRACK_SELECTION_MODE_WIDEST_RANGE);
-        });
-    });
-
-    describe('Multi Track Supported', function () {
-        it('should return false if type is not supported', function () {
-
-            let supported = mediaController.isMultiTrackSupportedByType(null);
-            expect(supported).to.be.false; // jshint ignore:line
-
-            supported = mediaController.isMultiTrackSupportedByType(undefined);
-            expect(supported).to.be.false; // jshint ignore:line
-
-            supported = mediaController.isMultiTrackSupportedByType('toto');
-            expect(supported).to.be.false; // jshint ignore:line
-        });
-
-        it('should return true if type is supported', function () {
-
-            let supported = mediaController.isMultiTrackSupportedByType(Constants.AUDIO);
-            expect(supported).to.be.true; // jshint ignore:line
-
-            supported = mediaController.isMultiTrackSupportedByType(Constants.VIDEO);
-            expect(supported).to.be.true; // jshint ignore:line
-
-            supported = mediaController.isMultiTrackSupportedByType(Constants.TEXT);
-            expect(supported).to.be.true; // jshint ignore:line
-
-            supported = mediaController.isMultiTrackSupportedByType(Constants.FRAGMENTED_TEXT);
-            expect(supported).to.be.true; // jshint ignore:line
-        });
-
     });
 
     describe('Track Equality', function () {
@@ -268,7 +172,7 @@ describe('MediaController', function () {
         });
 
         it('getTracksFor should return an empty array if parameters are defined, but internal tracks array is empty', function () {
-            const trackArray = mediaController.getTracksFor(Constants.VIDEO, {id: 'id'});
+            const trackArray = mediaController.getTracksFor(Constants.VIDEO, { id: 'id' });
 
             expect(trackArray).to.be.instanceOf(Array);    // jshint ignore:line
             expect(trackArray).to.be.empty;                // jshint ignore:line
@@ -293,7 +197,7 @@ describe('MediaController', function () {
 
             // check that track has been added
 
-            let trackList = mediaController.getTracksFor(trackType, streamInfo);
+            let trackList = mediaController.getTracksFor(trackType, streamInfo.id);
             expect(trackList).to.have.lengthOf(1);
             expect(objectUtils.areEqual(trackList[0], track)).to.be.true; // jshint ignore:line
         });
@@ -322,7 +226,7 @@ describe('MediaController', function () {
             mediaController.setTrack(track);
 
             // check that track has been added
-            let currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo);
+            let currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo.id);
             expect(objectUtils.areEqual(currentTrack, track)).to.be.true; // jshint ignore:line
         });
 
@@ -382,7 +286,8 @@ describe('MediaController', function () {
                 viewpoint: 'viewpoint',
                 roles: 1,
                 accessibility: 1,
-                audioChannelConfiguration: 1
+                audioChannelConfiguration: 1,
+                isFragmented: true
             };
 
             let track2 = {
@@ -392,7 +297,8 @@ describe('MediaController', function () {
                 viewpoint: 'viewpoint',
                 roles: 1,
                 accessibility: 1,
-                audioChannelConfiguration: 1
+                audioChannelConfiguration: 1,
+                isFragmented: true
             };
 
             // add tracks
@@ -403,7 +309,7 @@ describe('MediaController', function () {
             mediaController.setTrack(track1);
 
             // check that track has been added
-            let currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo);
+            let currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo.id);
             expect(objectUtils.areEqual(currentTrack, track1)).to.be.true; // jshint ignore:line
 
             let onTrackChanged = function (e) {
@@ -428,253 +334,336 @@ describe('MediaController', function () {
     });
 
     describe('Initial Track Management', function () {
+        let streamInfo = {
+            id: 'id'
+        };
+        let frTrack = {
+            type: trackType,
+            streamInfo: streamInfo,
+            lang: 'fr',
+            viewpoint: 'viewpoint',
+            roles: 1,
+            accessibility: 1,
+            audioChannelConfiguration: 1
+        };
+        const qtzTrack = {
+            type: trackType,
+            streamInfo: streamInfo,
+            lang: 'qtz',
+            viewpoint: 'viewpoint',
+            roles: 1,
+            accessibility: 1,
+            audioChannelConfiguration: 1
+        };
 
         it('should check initial media settings to choose initial track', function () {
-            let streamInfo = {
-                id: 'id'
-            };
-            let track = {
-                type: trackType,
-                streamInfo: streamInfo,
-                lang: 'fr',
-                viewpoint: 'viewpoint',
-                roles: 1,
-                accessibility: 1,
-                audioChannelConfiguration: 1
-            };
-
-            mediaController.addTrack(track);
-
-            let trackList = mediaController.getTracksFor(trackType, streamInfo);
-            expect(trackList).to.have.lengthOf(1);
-            expect(objectUtils.areEqual(trackList[0], track)).to.be.true; // jshint ignore:line
-
-            let currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo);
-            expect(objectUtils.areEqual(currentTrack, track)).to.be.false; // jshint ignore:line
-
-            // call to checkInitialMediaSettingsForType
-            mediaController.setInitialSettings(trackType, {
-                lang: 'fr',
-                viewpoint: 'viewpoint'
-            });
-            mediaController.checkInitialMediaSettingsForType(trackType, streamInfo);
-
-            currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo);
-            expect(objectUtils.areEqual(currentTrack, track)).to.be.true; // jshint ignore:line
-
-        });
-
-        it('should check initial media settings to choose initial track with a string/regex lang', function () {
-            const streamInfo = {
-                id: 'id'
-            };
-            const track = {
-                type: trackType,
-                streamInfo: streamInfo,
-                lang: 'fr',
-                viewpoint: 'viewpoint',
-                roles: 1,
-                accessibility: 1,
-                audioChannelConfiguration: 1
-            };
-
-            mediaController.addTrack(track);
-
-            let trackList = mediaController.getTracksFor(trackType, streamInfo);
-            expect(trackList).to.have.lengthOf(1);
-            expect(objectUtils.areEqual(trackList[0], track)).to.be.true; // jshint ignore:line
-
-            let currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo);
-            expect(objectUtils.areEqual(currentTrack, track)).to.be.false; // jshint ignore:line
-
-            // call to checkInitialMediaSettingsForType
-            mediaController.setInitialSettings(trackType, {
-                lang: 'fr|en|qtz',
-                viewpoint: 'viewpoint'
-            });
-            mediaController.checkInitialMediaSettingsForType(trackType, streamInfo);
-
-            currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo);
-            expect(objectUtils.areEqual(currentTrack, track)).to.be.true; // jshint ignore:line
-        });
-
-        it('should check initial media settings to choose initial track with a regex lang', function () {
-            const streamInfo = {
-                id: 'id'
-            };
-            const frTrack = {
-                type: trackType,
-                streamInfo: streamInfo,
-                lang: 'fr',
-                viewpoint: 'viewpoint',
-                roles: 1,
-                accessibility: 1,
-                audioChannelConfiguration: 1
-            };
-            const qtzTrack = {
-                type: trackType,
-                streamInfo: streamInfo,
-                lang: 'qtz',
-                viewpoint: 'viewpoint',
-                roles: 1,
-                accessibility: 1,
-                audioChannelConfiguration: 1
-            };
-
             mediaController.addTrack(frTrack);
             mediaController.addTrack(qtzTrack);
 
-            let trackList = mediaController.getTracksFor(trackType, streamInfo);
+            let trackList = mediaController.getTracksFor(trackType, streamInfo.id);
             expect(trackList).to.have.lengthOf(2);
             expect(objectUtils.areEqual(trackList[0], frTrack)).to.be.true; // jshint ignore:line
             expect(objectUtils.areEqual(trackList[1], qtzTrack)).to.be.true; // jshint ignore:line
 
-            let currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo);
+            let currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo.id);
+            expect(objectUtils.areEqual(currentTrack, frTrack)).to.be.false; // jshint ignore:line
+
+            // call to setInitialMediaSettingsForType
+            mediaController.setInitialSettings(trackType, {
+                lang: 'qtz',
+                viewpoint: 'viewpoint'
+            });
+            mediaController.setInitialMediaSettingsForType(trackType, streamInfo);
+
+            currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo.id);
+            expect(objectUtils.areEqual(currentTrack, qtzTrack)).to.be.true; // jshint ignore:line
+
+        });
+
+        it('should check initial media settings to choose initial track with 639-2 3-letter code', function () {
+            mediaController.addTrack(qtzTrack);
+            mediaController.addTrack(frTrack);
+
+            let trackList = mediaController.getTracksFor(trackType, streamInfo.id);
+            expect(trackList).to.have.lengthOf(2);
+            expect(objectUtils.areEqual(trackList[0], qtzTrack)).to.be.true; // jshint ignore:line
+            expect(objectUtils.areEqual(trackList[1], frTrack)).to.be.true; // jshint ignore:line
+
+            let currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo.id);
+            expect(objectUtils.areEqual(currentTrack, frTrack)).to.be.false; // jshint ignore:line
+
+            // call to setInitialMediaSettingsForType
+            mediaController.setInitialSettings(trackType, {
+                lang: 'fre',
+                viewpoint: 'viewpoint'
+            });
+            mediaController.setInitialMediaSettingsForType(trackType, streamInfo);
+
+            currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo.id);
+            expect(objectUtils.areEqual(currentTrack, frTrack)).to.be.true; // jshint ignore:line
+
+        });
+
+        it('should check initial media settings to choose initial track with a string/regex lang', function () {
+            mediaController.addTrack(frTrack);
+            mediaController.addTrack(qtzTrack);
+
+            let trackList = mediaController.getTracksFor(trackType, streamInfo.id);
+            expect(trackList).to.have.lengthOf(2);
+            expect(objectUtils.areEqual(trackList[0], frTrack)).to.be.true; // jshint ignore:line
+            expect(objectUtils.areEqual(trackList[1], qtzTrack)).to.be.true; // jshint ignore:line
+
+            let currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo.id);
+            expect(objectUtils.areEqual(currentTrack, frTrack)).to.be.false; // jshint ignore:line
+
+            // call to setInitialMediaSettingsForType
+            mediaController.setInitialSettings(trackType, {
+                lang: /fr|en|qtz/,
+                viewpoint: 'viewpoint'
+            });
+            mediaController.setInitialMediaSettingsForType(trackType, streamInfo);
+
+            currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo.id);
+            expect(objectUtils.areEqual(currentTrack, frTrack)).to.be.true; // jshint ignore:line
+        });
+
+        it('should check initial media settings to choose initial track with a regex lang', function () {
+            mediaController.addTrack(frTrack);
+            mediaController.addTrack(qtzTrack);
+
+            let trackList = mediaController.getTracksFor(trackType, streamInfo.id);
+            expect(trackList).to.have.lengthOf(2);
+            expect(objectUtils.areEqual(trackList[0], frTrack)).to.be.true; // jshint ignore:line
+            expect(objectUtils.areEqual(trackList[1], qtzTrack)).to.be.true; // jshint ignore:line
+
+            let currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo.id);
             expect(objectUtils.areEqual(currentTrack, frTrack)).to.be.false; // jshint ignore:line
             expect(objectUtils.areEqual(currentTrack, qtzTrack)).to.be.false; // jshint ignore:line
 
-            // call to checkInitialMediaSettingsForType
+            // call to setInitialMediaSettingsForType
             mediaController.setInitialSettings(trackType, {
                 lang: /qtz|mis/,
                 viewpoint: 'viewpoint'
             });
-            mediaController.checkInitialMediaSettingsForType(trackType, streamInfo);
+            mediaController.setInitialMediaSettingsForType(trackType, streamInfo);
 
-            currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo);
+            currentTrack = mediaController.getCurrentTrackFor(trackType, streamInfo.id);
             expect(objectUtils.areEqual(currentTrack, qtzTrack)).to.be.true; // jshint ignore:line
         });
     });
 
     describe('Initial Track Selection', function () {
 
-        function testSelectInitialTrack(type, expectedBitrateList, otherBitrateList) {
-            const tracks = [ expectedBitrateList, otherBitrateList ].map(function (bitrateList) {
+        function testSelectInitialTrack(type, expectedTrack, otherTrack) {
+            const tracks = [expectedTrack, otherTrack].map(function (track) {
                 return {
-                    bitrateList: bitrateList,
-                    representationCount: bitrateList.length
+                    bitrateList: track.bitrateList,
+                    representationCount: track.bitrateList.length,
+                    selectionPriority: !isNaN(track.selectionPriority) ? track.selectionPriority : 1
                 };
             });
             const selection = mediaController.selectInitialTrack(type, tracks);
-            expect(objectUtils.areEqual(selection.bitrateList, expectedBitrateList)).to.be.true; // jshint ignore:line
+            expect(objectUtils.areEqual(selection.bitrateList, expectedTrack.bitrateList)).to.be.true; // jshint ignore:line
         }
 
-        describe('"highestBitrate" mode', function () {
+        describe('"highestSelectionPriority" mode', function () {
             beforeEach(function () {
-                mediaController.setSelectionModeForInitialTrack(Constants.TRACK_SELECTION_MODE_HIGHEST_BITRATE);
+                settings.update({ streaming: { selectionModeForInitialTrack: Constants.TRACK_SELECTION_MODE_HIGHEST_SELECTION_PRIORITY } });
             });
 
-            it('should select track with highest bitrate', function () {
+            it('should select track with highest priority', function () {
                 testSelectInitialTrack(
                     'video',
-                    [ { bandwidth: 2000 } ],
-                    [ { bandwidth: 1000 } ]
+                    { bitrateList: [{ bandwidth: 1000 }], selectionPriority: 2 },
+                    { bitrateList: [{ bandwidth: 2000 }], selectionPriority: 1 }
+                );
+            });
+
+            it('should select track with highest bitrate if both tracks have same priority', function () {
+                testSelectInitialTrack(
+                    'video',
+                    { bitrateList: [{ bandwidth: 1000 }, { bandwidth: 3000 }], selectionPriority: 1 },
+                    { bitrateList: [{ bandwidth: 2000 }], selectionPriority: 1 }
+                );
+            });
+
+            it('should select track with highest bitrate if no priority is given', function () {
+                testSelectInitialTrack(
+                    'video',
+                    { bitrateList: [{ bandwidth: 1000 }, { bandwidth: 3000 }] },
+                    { bitrateList: [{ bandwidth: 2000 }] }
                 );
             });
 
             it('should tie break using "widestRange"', function () {
                 testSelectInitialTrack(
                     'video',
-                    [ { bandwidth: 2000 }, { bandwidth: 1000 } ],
-                    [ { bandwidth: 2000 } ]
+                    { bitrateList: [{ bandwidth: 2000 }, { bandwidth: 1000 }] },
+                    { bitrateList: [{ bandwidth: 2000 }] }
+                );
+            });
+
+        });
+
+        describe('"highestBitrate" mode', function () {
+            beforeEach(function () {
+                settings.update({ streaming: { selectionModeForInitialTrack: Constants.TRACK_SELECTION_MODE_HIGHEST_BITRATE } });
+            });
+
+            it('should select track with highest bitrate', function () {
+                testSelectInitialTrack(
+                    'video',
+                    { bitrateList: [{ bandwidth: 2000 }] },
+                    { bitrateList: [{ bandwidth: 1000 }] }
+                );
+            });
+
+            it('should tie break using "widestRange"', function () {
+                testSelectInitialTrack(
+                    'video',
+                    { bitrateList: [{ bandwidth: 2000 }, { bandwidth: 1000 }] },
+                    { bitrateList: [{ bandwidth: 2000 }] }
                 );
             });
 
             it('should select track with highest bitrate, expected list only one entry"', function () {
                 testSelectInitialTrack(
                     'video',
-                    [ { bandwidth: 2100 } ],
-                    [ { bandwidth: 2000 }, { bandwidth: 1000 } ]
+                    { bitrateList: [{ bandwidth: 2100 }] },
+                    { bitrateList: [{ bandwidth: 2000 }, { bandwidth: 1000 }] },
                 );
             });
         });
 
         describe('"firstTrack" mode', function () {
             beforeEach(function () {
-                mediaController.setSelectionModeForInitialTrack(Constants.TRACK_SELECTION_MODE_FIRST_TRACK);
+                settings.update({ streaming: { selectionModeForInitialTrack: Constants.TRACK_SELECTION_MODE_FIRST_TRACK } });
             });
 
             it('should select first track', function () {
                 testSelectInitialTrack(
                     'video',
-                    [ { bandwidth: 1000 } ],
-                    [ { bandwidth: 2000 } ]
+                    { bitrateList: [{ bandwidth: 1000 }] },
+                    { bitrateList: [{ bandwidth: 2000 }] }
                 );
             });
 
             it('should select first track, other bitrate list more than one entry"', function () {
                 testSelectInitialTrack(
                     'video',
-                    [ { bandwidth: 2000 }],
-                    [ { bandwidth: 3000 }, { bandwidth: 1000 } ]
+                    { bitrateList: [{ bandwidth: 2000 }] },
+                    { bitrateList: [{ bandwidth: 3000 }, { bandwidth: 1000 }] }
                 );
             });
 
             it('should select first track, expected bitrate list more than one entry"', function () {
                 testSelectInitialTrack(
                     'video',
-                    [{ bandwidth: 3000 }, { bandwidth: 1000 }],
-                    [ { bandwidth: 2000 } ]
+                    { bitrateList: [{ bandwidth: 3000 }, { bandwidth: 1000 }] },
+                    { bitrateList: [{ bandwidth: 2000 }] }
                 );
             });
         });
 
         describe('"highestEfficiency" mode', function () {
             beforeEach(function () {
-                mediaController.setSelectionModeForInitialTrack(Constants.TRACK_SELECTION_MODE_HIGHEST_EFFICIENCY);
+                settings.update({ streaming: { selectionModeForInitialTrack: Constants.TRACK_SELECTION_MODE_HIGHEST_EFFICIENCY } });
             });
 
             it('should select video track with lowest bitrate among equal resolutions', function () {
                 testSelectInitialTrack(
                     'video',
-                    [ { bandwidth: 1000, width: 1920, height: 1280 } ],
-                    [ { bandwidth: 2000, width: 1920, height: 1280 } ]
+                    { bitrateList: [{ bandwidth: 1000, width: 1920, height: 1280 }] },
+                    { bitrateList: [{ bandwidth: 2000, width: 1920, height: 1280 }] }
                 );
             });
 
             it('should select video track with lowest bitrate among different resolutions', function () {
                 testSelectInitialTrack(
                     'video',
-                    [ { bandwidth: 1000, width: 1920, height: 1280 } ],
-                    [ { bandwidth: 1000, width: 1080, height: 720 } ]
+                    { bitrateList: [{ bandwidth: 1000, width: 1920, height: 1280 }] },
+                    { bitrateList: [{ bandwidth: 1000, width: 1280, height: 720 }] }
                 );
             });
 
             it('should select audio track with lowest avg bitrate', function () {
                 testSelectInitialTrack(
                     'audio',
-                    [ { bandwidth: 1000, width: 0, height: 0 } ],
-                    [ { bandwidth: 2000, width: 0, height: 0 } ]
+                    { bitrateList: [{ bandwidth: 1000, width: 0, height: 0 }] },
+                    { bitrateList: [{ bandwidth: 2000, width: 0, height: 0 }] }
                 );
             });
 
             it('should tie break using "highestBitrate"', function () {
                 testSelectInitialTrack(
                     'video',
-                    [ { bandwidth: 1500, width: 1920, height: 1280 }, { bandwidth: 1000, width: 1080, height: 720 } ],
-                    [ { bandwidth: 1000, width: 1080, height: 720 } ]
+                    {
+                        bitrateList: [{ bandwidth: 1500, width: 1920, height: 1280 }, {
+                            bandwidth: 1000,
+                            width: 1080,
+                            height: 720
+                        }]
+                    },
+                    { bitrateList: [{ bandwidth: 1000, width: 1080, height: 720 }] }
                 );
             });
         });
 
         describe('"widestRange" mode', function () {
             beforeEach(function () {
-                mediaController.setSelectionModeForInitialTrack(Constants.TRACK_SELECTION_MODE_WIDEST_RANGE);
+                settings.update({ streaming: { selectionModeForInitialTrack: Constants.TRACK_SELECTION_MODE_WIDEST_RANGE } });
             });
 
             it('should select track with most bitrates', function () {
                 testSelectInitialTrack(
                     'video',
-                    [ { bandwidth: 2000 }, { bandwidth: 1000 } ],
-                    [ { bandwidth: 2000 } ]
+                    { bitrateList: [{ bandwidth: 2000 }, { bandwidth: 1000 }] },
+                    { bitrateList: [{ bandwidth: 2000 }] }
                 );
             });
 
             it('should tie break using "highestBitrate"', function () {
                 testSelectInitialTrack(
                     'video',
-                    [ { bandwidth: 3000 }, { bandwidth: 2000 } ],
-                    [ { bandwidth: 2000 }, { bandwidth: 1000 } ]
+                    { bitrateList: [{ bandwidth: 3000 }, { bandwidth: 2000 }] },
+                    { bitrateList: [{ bandwidth: 2000 }, { bandwidth: 1000 }] }
                 );
+            });
+        });
+
+        describe('custom initial track selection function', function () {
+            beforeEach(function () {
+
+            });
+
+            it('should return the track with the lowest bitrate', function () {
+                settings.update({ streaming: { selectionModeForInitialTrack: Constants.TRACK_SELECTION_MODE_HIGHEST_BITRATE } });
+
+                function getTrackWithLowestBitrate(trackArr) {
+                    let min = Infinity;
+                    let result = [];
+                    let tmp;
+
+                    trackArr.forEach(function (track) {
+                        tmp = Math.min.apply(Math, track.bitrateList.map(function (obj) {
+                            return obj.bandwidth;
+                        }));
+
+                        if (tmp < min) {
+                            min = tmp;
+                            result = [track];
+                        }
+                    });
+
+                    return result;
+                }
+
+                customParametersModel.setCustomInitialTrackSelectionFunction(getTrackWithLowestBitrate);
+                testSelectInitialTrack(
+                    'video',
+                    { bitrateList: [{ bandwidth: 1000 }, { bandwidth: 5000 }] },
+                    { bitrateList: [{ bandwidth: 2000 }, { bandwidth: 8000 }] }
+                )
             });
         });
     });

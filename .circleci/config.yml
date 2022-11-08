@@ -49,8 +49,34 @@ commands:
         steps:
             - run:
                 name: Build and run unit tests
-                command: npm run build
+                command: |
+                    npm run build
+                    npm run test
 
+    functional_steps:
+            steps:
+                - functional_precondition
+                - checkout
+                - dependencies_setup
+                - build_unit_test_steps
+                - functional_test_setup
+
+    run_test_suite:
+        parameters:
+            browser:
+                default: "chrome"
+                type: string
+            protocol:
+                default: "https"
+                type: string
+            groupname:
+                default: ""
+                type: string
+        steps:
+            - run:
+                name: Run functional tests (<<parameters.browser>> / <<parameters.protocol>>) <<parameters.groupname>>
+                command:
+                    node test/functional/runTests.js --selenium=remote --reporters=junit --app=remote --browsers=<<parameters.browser>> --protocol=<<parameters.protocol>> --groupname="<<parameters.groupname>>"
 jobs:
     build-and-unit-test:
         executor: dashjs-executor
@@ -62,8 +88,7 @@ jobs:
                 name: Deploy
                 command: |
                     if [ "${CIRCLE_BRANCH}" = "development" ] && [ -n "$DEPLOY_HOST" ] && [ -n "$DEPLOY_USER" ] && [ -n "$DEPLOY_PASSWORD" ]; then
-                        sudo npm install -g grunt-cli
-                        grunt deploy --git-commit=$CIRCLE_SHA1 --ftp-host=$DEPLOY_HOST --ftp-user=$DEPLOY_USER --ftp-pass=$DEPLOY_PASSWORD
+                        node deploy.js --host=$DEPLOY_HOST --user=$DEPLOY_USER --password=$DEPLOY_PASSWORD
                     else
                         echo "Not on development branch or deploy not configured. Dry run only, nothing will be deployed."
                     fi
@@ -112,23 +137,52 @@ jobs:
             - store_test_results:
                 path: test/functional/reports
 
-    functional-tests-all:
+    functional-tests-VOD_LIVE:
         executor: dashjs-executor
         steps:
-            - functional_precondition
-            - checkout
-            - dependencies_setup
-            - build_unit_test_steps
-            - functional_test_setup
-            - run:
-                name: Run functional tests (chrome / https)
-                command:
-                    node test/functional/runTests.js --selenium=remote --reporters=junit --app=remote --browsers=chrome --protocol=https
-            - run:
-                name: Run functional tests (chrome / http)
-                when: always # run tests even if some previous tests failed
-                command:
-                    node test/functional/runTests.js --selenium=remote --reporters=junit --app=remote --browsers=chrome --protocol=http
+            - functional_steps
+            - run_test_suite:
+                groupname: VOD (Static MPD)
+            - run_test_suite:
+                groupname: LIVE (Dynamic MPD)
+            - run_test_suite:
+                groupname: Live Low Latency
+            - store_test_results:
+                path: test/functional/reports
+
+    functional-tests-DRM:
+        executor: dashjs-executor
+        steps:
+            - functional_steps
+            - run_test_suite:
+                groupname: DRM (modern)
+            - run_test_suite:
+                groupname: DRM Content (conservative/legacy)
+            - store_test_results:
+                path: test/functional/reports
+
+    functional-tests-Subtitles_Thumbnails_Audio_Smooth:
+        executor: dashjs-executor
+        steps:
+            - functional_steps
+            - run_test_suite:
+                groupname: Subtitles and Captions
+            - run_test_suite:
+                groupname: Thumbnails
+            - run_test_suite:
+                groupname: Audio-only
+            - run_test_suite:
+                groupname: Smooth Streaming
+            
+            - store_test_results:
+                path: test/functional/reports
+
+    functional-tests-only-http:
+        executor: dashjs-executor
+        steps:
+            - functional_steps
+            - run_test_suite:
+                protocol: http
             - store_test_results:
                 path: test/functional/reports
 
@@ -151,11 +205,14 @@ workflows:
     scheduled-workflow:
         triggers:
             - schedule:
-                cron: "0 0 * * 0"
+                cron: "0 0 * * 0,3"
                 filters:
                     branches:
                         only:
                             - development
         jobs:
-            - functional-tests-all
+            - functional-tests-VOD_LIVE
+            - functional-tests-DRM
+            - functional-tests-Subtitles_Thumbnails_Audio_Smooth
+            - functional-tests-only-http
 

@@ -20,15 +20,12 @@
         "wallclockTimeUpdateInterval": 50,
         "lowLatencyEnabled": false,
         "keepProtectionMediaKeys": false,
-        "useManifestDateHeaderTimeSource": true,
         "segmentOverlapToleranceTime": 0.2,
         "useSuggestedPresentationDelay": false,
         "manifestUpdateRetryInterval": 100,
         "liveCatchup": {
-            "minDrift": 0.02,
             "maxDrift": 0,
             "playbackRate": 0.5,
-            "latencyThreshold": null,
             "enabled": false
         },
         "lastBitrateCachingInfo": { "enabled": true, "ttl": 360000},

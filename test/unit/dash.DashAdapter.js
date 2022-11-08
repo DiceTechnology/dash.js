@@ -44,7 +44,7 @@ const manifest_with_ll_service_description = {
     ServiceDescription: {},
     ServiceDescription_asArray: [{
         Scope: { schemeIdUri: 'urn:dvb:dash:lowlatency:scope:2019' },
-        Latency: { target: 3000, max: 5000, min: 2000 },
+        Latency: { target: 3000, max: 5000, min: 2000, referenceId: 7 },
         PlaybackRate: { max: 1.5, min: 0.5 }
     }],
     Period_asArray: [{
@@ -103,18 +103,6 @@ describe('DashAdapter', function () {
             const mediaInfo = dashAdapter.getMediaInfoForType();
 
             expect(mediaInfo).to.be.null;                // jshint ignore:line
-        });
-
-        it('should return null when getDataForMedia is called and voPeriods is an empty array, mediaInfo parameter is undefined', function () {
-            const adaptation = dashAdapter.getDataForMedia();
-
-            expect(adaptation).to.be.null;                // jshint ignore:line
-        });
-
-        it('should return null when getDataForMedia is called and voPeriods is an empty array, mediaInfo parameter is an empty object', function () {
-            const adaptation = dashAdapter.getDataForMedia({});
-
-            expect(adaptation).to.be.null;                // jshint ignore:line
         });
 
         it('should return null when getEvent is called and no parameter is set', function () {
@@ -247,6 +235,20 @@ describe('DashAdapter', function () {
             expect(realAdaptation).to.be.undefined; // jshint ignore:line
         });
 
+        it('should return empty array when getProducerReferenceTimes is called and streamInfo parameter is null or undefined', () => {
+            const producerReferenceTimes = dashAdapter.getProducerReferenceTimes(null, voHelper.getDummyMediaInfo());
+
+            expect(producerReferenceTimes).to.be.instanceOf(Array);    // jshint ignore:line
+            expect(producerReferenceTimes).to.be.empty;                // jshint ignore:line
+        });
+
+        it('should return empty array when getProducerReferenceTimes is called and mediaInfo parameter is null or undefined', () => {
+            const producerReferenceTimes = dashAdapter.getProducerReferenceTimes(voHelper.getDummyStreamInfo(), null);
+
+            expect(producerReferenceTimes).to.be.instanceOf(Array);    // jshint ignore:line
+            expect(producerReferenceTimes).to.be.empty;                // jshint ignore:line
+        });
+
         it('should return empty array when getUTCTimingSources is called and no period is defined', function () {
             const timingSources = dashAdapter.getUTCTimingSources();
 
@@ -295,15 +297,15 @@ describe('DashAdapter', function () {
             });
         });
 
-        it('should return null when convertDataToRepresentationInfo is called and voRepresentation parameter is null or undefined', function () {
-            const representationInfo = dashAdapter.convertDataToRepresentationInfo();
+        it('should return null when convertRepresentationToRepresentationInfo is called and voRepresentation parameter is null or undefined', function () {
+            const representationInfo = dashAdapter.convertRepresentationToRepresentationInfo();
 
             expect(representationInfo).to.be.null;                // jshint ignore:line
         });
 
-        it('should return correct representationInfo when convertDataToRepresentationInfo is called and voRepresentation parameter is well defined', function () {
+        it('should return correct representationInfo when convertRepresentationToRepresentationInfo is called and voRepresentation parameter is well defined', function () {
             const voRepresentation = voHelper.getDummyRepresentation(Constants.VIDEO, 0);
-            const representationInfo = dashAdapter.convertDataToRepresentationInfo(voRepresentation);
+            const representationInfo = dashAdapter.convertRepresentationToRepresentationInfo(voRepresentation);
 
             expect(representationInfo).not.to.be.null;            // jshint ignore:line
             expect(representationInfo.quality).to.equal(0);         // jshint ignore:line
@@ -458,11 +460,11 @@ describe('DashAdapter', function () {
                 expect(mediaInfoArray).to.be.empty;                // jshint ignore:line
             });
 
-            it('should return an empty array when getAllMediaInfoForType is called and, embeddedText type and externalManifest are set', function () {
+            it('should return an empty array when getAllMediaInfoForType is called and, text type and externalManifest are set', function () {
                 const mediaInfoArray = dashAdapter.getAllMediaInfoForType({
                     id: 'defaultId_0',
                     index: 0
-                }, Constants.EMBEDDED_TEXT, manifest_with_video_with_embedded_subtitles);
+                }, Constants.TEXT, manifest_with_video_with_embedded_subtitles);
 
                 expect(mediaInfoArray).to.be.instanceOf(Array);    // jshint ignore:line
                 expect(mediaInfoArray.length).equals(2);           // jshint ignore:line
@@ -482,6 +484,7 @@ describe('DashAdapter', function () {
                 expect(streamInfos[0].manifestInfo.serviceDescriptions[0].latency.target).equals(3000);        // jshint ignore:line
                 expect(streamInfos[0].manifestInfo.serviceDescriptions[0].latency.max).equals(5000);           // jshint ignore:line
                 expect(streamInfos[0].manifestInfo.serviceDescriptions[0].latency.min).equals(2000);           // jshint ignore:line
+                expect(streamInfos[0].manifestInfo.serviceDescriptions[0].latency.referenceId).equals(7);      // jshint ignore:line
                 expect(streamInfos[0].manifestInfo.serviceDescriptions[0].playbackRate.max).equals(1.5);       // jshint ignore:line
                 expect(streamInfos[0].manifestInfo.serviceDescriptions[0].playbackRate.min).equals(0.5);       // jshint ignore:line
             });

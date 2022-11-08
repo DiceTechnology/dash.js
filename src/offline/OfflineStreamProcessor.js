@@ -34,7 +34,7 @@ import FragmentModel from '../streaming/models/FragmentModel';
 import FragmentLoader from '../streaming/FragmentLoader';
 import URLUtils from '../streaming/utils/URLUtils';
 import RequestModifier from '../streaming/utils/RequestModifier';
-
+import SegmentsController from '../dash/controllers/SegmentsController';
 
 function OfflineStreamProcessor(config) {
 
@@ -72,11 +72,22 @@ function OfflineStreamProcessor(config) {
         updating,
         downloadedSegments,
         isInitialized,
+        segmentsController,
         isStopped;
 
     function setup() {
         resetInitialSettings();
         logger = debug.getLogger(instance);
+
+        segmentsController = SegmentsController(context).create({
+            events,
+            eventBus,
+            streamInfo,
+            timelineConverter,
+            dashConstants,
+            segmentBaseController: config.segmentBaseController,
+            type
+        });
 
         indexHandler = DashHandler(context).create({
             streamInfo: streamInfo,
@@ -94,6 +105,7 @@ function OfflineStreamProcessor(config) {
             requestModifier: RequestModifier(context).getInstance(),
             dashConstants: dashConstants,
             constants: constants,
+            segmentsController: segmentsController,
             urlUtils: URLUtils(context).getInstance()
         });
 
@@ -107,7 +119,8 @@ function OfflineStreamProcessor(config) {
             dashConstants: dashConstants,
             events: events,
             eventBus: eventBus,
-            errors: errors
+            errors: errors,
+            segmentsController: segmentsController
         });
 
         fragmentModel = FragmentModel(context).create({
@@ -131,7 +144,7 @@ function OfflineStreamProcessor(config) {
             events: events
         });
 
-        eventBus.on(events.STREAM_COMPLETED, onStreamCompleted, instance);
+        eventBus.on(events.STREAM_REQUESTING_COMPLETED, onStreamRequestingCompleted, instance);
         eventBus.on(events.FRAGMENT_LOADING_COMPLETED, onFragmentLoadingCompleted, instance);
     }
 
@@ -155,15 +168,15 @@ function OfflineStreamProcessor(config) {
             let suffix = isInit ? 'init' : e.request.index;
             let fragmentName = e.request.representationId + '_' + suffix;
             offlineStoreController.storeFragment(manifestId, fragmentName, e.response)
-            .then(() => {
-                if (!isInit) {
-                    // store current index and downloadedSegments number
-                    offlineStoreController.setRepresentationCurrentState(manifestId, e.request.representationId, {
-                        index: e.request.index,
-                        downloaded: downloadedSegments
-                    } );
-                }
-            });
+                .then(() => {
+                    if (!isInit) {
+                        // store current index and downloadedSegments number
+                        offlineStoreController.setRepresentationCurrentState(manifestId, e.request.representationId, {
+                            index: e.request.index,
+                            downloaded: downloadedSegments
+                        });
+                    }
+                });
         }
 
         if (e.error && e.request.serviceLocation && !isStopped) {
@@ -174,7 +187,7 @@ function OfflineStreamProcessor(config) {
         }
     }
 
-    function onStreamCompleted(e) {
+    function onStreamRequestingCompleted(e) {
         if (e.fragmentModel !== fragmentModel) {
             return;
         }
@@ -183,7 +196,7 @@ function OfflineStreamProcessor(config) {
         completedCb();
     }
 
-    function getRepresentationController () {
+    function getRepresentationController() {
         return representationController;
     }
 
@@ -212,7 +225,7 @@ function OfflineStreamProcessor(config) {
     /**
      * Execute init request for the represenation
      * @memberof OfflineStreamProcessor#
-    */
+     */
     function getInitRequest() {
         if (!representationController.getCurrentRepresentation()) {
             return null;
@@ -224,7 +237,7 @@ function OfflineStreamProcessor(config) {
     /**
      * Get next request
      * @memberof OfflineStreamProcessor#
-    */
+     */
     function getNextRequest() {
         return indexHandler.getNextSegmentRequest(getMediaInfo(), representationController.getCurrentRepresentation());
     }
@@ -232,7 +245,7 @@ function OfflineStreamProcessor(config) {
     /**
      * Start download
      * @memberof OfflineStreamProcessor#
-    */
+     */
     function start() {
         if (representationController) {
             if (!representationController.getCurrentRepresentation()) {
@@ -241,23 +254,24 @@ function OfflineStreamProcessor(config) {
             isStopped = false;
 
             offlineStoreController.getRepresentationCurrentState(manifestId, representationController.getCurrentRepresentation().id)
-            .then((state) => {
-                if (state) {
-                    indexHandler.setCurrentIndex(state.index);
-                    downloadedSegments = state.downloaded;
-                }
-                download();
-            }).catch(() => {
-                // start from beginining
-                download();
-            });
+                .then((state) => {
+                    if (state) {
+                        indexHandler.setCurrentIndex(state.index);
+                        downloadedSegments = state.downloaded;
+                    }
+                    download();
+                })
+                .catch(() => {
+                    // start from beginining
+                    download();
+                });
         }
     }
 
     /**
      * Performs download of fragment according to type
      * @memberof OfflineStreamProcessor#
-    */
+     */
     function download() {
         if (isStopped) {
             return;
@@ -299,12 +313,12 @@ function OfflineStreamProcessor(config) {
             return representation.id === bitrate.id;
         });
 
-        if (type !== constants.VIDEO && type !== constants.AUDIO  && type !== constants.TEXT && type !== constants.FRAGMENTED_TEXT) {
+        if (type !== constants.VIDEO && type !== constants.AUDIO && type !== constants.TEXT) {
             updating = false;
             return;
         }
 
-        representationController.updateData(null, voRepresentations, type, quality);
+        representationController.updateData(null, voRepresentations, type, mediaInfo.isFragmented, quality);
     }
 
     function isUpdating() {
@@ -320,10 +334,10 @@ function OfflineStreamProcessor(config) {
     }
 
     function getAvailableSegmentsNumber() {
-        return representationController.getCurrentRepresentation().availableSegmentsNumber + 1; // do not forget init segment
+        return representationController.getCurrentRepresentation().numberOfSegments + 1; // do not forget init segment
     }
 
-    function updateProgression () {
+    function updateProgression() {
         if (progressCb) {
             progressCb(instance, downloadedSegments, getAvailableSegmentsNumber());
         }
@@ -338,12 +352,12 @@ function OfflineStreamProcessor(config) {
     /**
      * Reset
      * @memberof OfflineStreamProcessor#
-    */
+     */
     function reset() {
         resetInitialSettings();
         indexHandler.reset();
 
-        eventBus.off(events.STREAM_COMPLETED, onStreamCompleted, instance);
+        eventBus.off(events.STREAM_REQUESTING_COMPLETED, onStreamRequestingCompleted, instance);
         eventBus.off(events.FRAGMENT_LOADING_COMPLETED, onFragmentLoadingCompleted, instance);
     }
 
@@ -365,6 +379,7 @@ function OfflineStreamProcessor(config) {
 
     return instance;
 }
+
 OfflineStreamProcessor.__dashjs_factory_name = 'OfflineStreamProcessor';
 const factory = dashjs.FactoryMaker.getClassFactory(OfflineStreamProcessor); /* jshint ignore:line */
 export default factory;

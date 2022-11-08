@@ -33,8 +33,8 @@ import SchemeLoaderFactory from '../../streaming/net/SchemeLoaderFactory';
 
 /**
  * @class URLLoader
- * @description  Call Offline Loader or Online Loader dependaing on URL
- * @param {Object} cfg - dependances
+ * @description  Call Offline Loader or Online Loader depending on URL
+ * @param {Object} cfg - dependencies
  * @ignore
 */
 function URLLoader(cfg) {
@@ -49,22 +49,21 @@ function URLLoader(cfg) {
     schemeLoaderFactory = SchemeLoaderFactory(context).getInstance();
 
     function load(config) {
-
-        let loaderFactory = schemeLoaderFactory.getLoader(config && config.request ? config.request.url : null);
-        loader = loaderFactory(context).create({
-            errHandler: cfg.errHandler,
-            mediaPlayerModel: cfg.mediaPlayerModel,
-            requestModifier: cfg.requestModifier,
-            useFetch: cfg.useFetch || null,
-            dashMetrics: cfg.dashMetrics,
-            boxParser: cfg.boxParser ? cfg.boxParser : null,
-            constants: cfg.constants ? cfg.constants : null,
-            dashConstants: cfg.dashConstants ? cfg.dashConstants : null,
-            urlUtils: cfg.urlUtils ? cfg.urlUtils : null,
-            requestTimeout: !isNaN(cfg.requestTimeout) ? cfg.requestTimeout : 0,
-            errors: cfg.errors
-        });
-
+        if (!loader) {
+            let loaderFactory = schemeLoaderFactory.getLoader(config && config.request ? config.request.url : null);
+            loader = loaderFactory(context).create({
+                errHandler: cfg.errHandler,
+                mediaPlayerModel: cfg.mediaPlayerModel,
+                requestModifier: cfg.requestModifier,
+                dashMetrics: cfg.dashMetrics,
+                boxParser: cfg.boxParser ? cfg.boxParser : null,
+                constants: cfg.constants ? cfg.constants : null,
+                dashConstants: cfg.dashConstants ? cfg.dashConstants : null,
+                urlUtils: cfg.urlUtils ? cfg.urlUtils : null,
+                requestTimeout: !isNaN(cfg.requestTimeout) ? cfg.requestTimeout : 0,
+                errors: cfg.errors
+            });
+        }
         loader.load(config);
     }
 

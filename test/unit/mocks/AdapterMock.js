@@ -1,4 +1,4 @@
-function AdapterMock () {
+function AdapterMock() {
     this.metricsList = {
         BUFFER_STATE: 'BUFFER_STATE'
     };
@@ -20,11 +20,24 @@ function AdapterMock () {
     };
 
     this.getAllMediaInfoForType = function () {
-        return [{codec: 'audio/mp4;codecs="mp4a.40.2"', id: undefined, index: 0, isText: false, lang: 'eng',mimeType: 'audio/mp4', roles: ['main']},
-                {codec: 'audio/mp4;codecs="mp4a.40.2"', id: undefined, index: 1, isText: false, lang: 'deu',mimeType: 'audio/mp4', roles: ['main']}];
+        return [{
+            codec: 'audio/mp4;codecs="mp4a.40.2"',
+            id: undefined,
+            index: 0,
+            lang: 'eng',
+            mimeType: 'audio/mp4',
+            roles: ['main']
+        }, {
+            codec: 'audio/mp4;codecs="mp4a.40.2"',
+            id: undefined,
+            index: 1,
+            lang: 'deu',
+            mimeType: 'audio/mp4',
+            roles: ['main']
+        }];
     };
 
-    this.getDataForMedia = function () {
+    this.getAdaptationForMediaInfo = function () {
         return {};
     };
 
@@ -66,11 +79,28 @@ function AdapterMock () {
                 {
                     width: 900
                 }
+            ],
+            Representation_asArray: [
+                {
+                    width: 500
+                },
+                {
+                    width: 750
+                },
+                {
+                    width: 900
+                },
+                {
+                    width: 900
+                },
+                {
+                    width: 900
+                }
             ]
         };
     };
 
-    this.getIsTextTrack = function () {
+    this.getIsText = function () {
         return false;
     };
 
@@ -80,7 +110,9 @@ function AdapterMock () {
 
     this.getRepresentationSortFunction = function () {
         // Return a silly sort function
-        return function () { return 0; };
+        return function () {
+            return 0;
+        };
     };
 
     this.getManifestUpdatePeriod = function () {
@@ -118,9 +150,10 @@ function AdapterMock () {
         return false;
     };
 
-    this.applyPatchToManifest = function () {};
+    this.applyPatchToManifest = function () {
+    };
 
-    this.convertDataToRepresentationInfo = function () {
+    this.convertRepresentationToRepresentationInfo = function () {
         return null;
     };
 
@@ -168,6 +201,27 @@ function AdapterMock () {
     this.getPatchLocation = function () {
         return null;
     };
+
+    this.getRegularPeriods = function () {
+        return this.regularPeriods || [];
+    };
+
+    this.setRegularPeriods = function (periods) {
+        this.regularPeriods = periods;
+    };
+
+    this.getProducerReferenceTimes = function () {
+        return [{
+            UTCTiming: null,
+            applicationScheme: null,
+            id: 7,
+            inband: false,
+            presentationTime: 10000,
+            type: 'encoder',
+            wallClockTime: '1970-01-01T00:00:04Z'
+        }];
+    };
+
 }
 
 export default AdapterMock;

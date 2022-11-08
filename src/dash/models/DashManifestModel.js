@@ -38,6 +38,8 @@ import UTCTiming from '../vo/UTCTiming';
 import Event from '../vo/Event';
 import BaseURL from '../vo/BaseURL';
 import EventStream from '../vo/EventStream';
+import ProducerReferenceTime from '../vo/ProducerReferenceTime';
+import ContentSteering from '../vo/ContentSteering';
 import ObjectUtils from '../../streaming/utils/ObjectUtils';
 import URLUtils from '../../streaming/utils/URLUtils';
 import FactoryMaker from '../../core/FactoryMaker';
@@ -66,16 +68,6 @@ function DashManifestModel() {
     }
 
     function getIsTypeOf(adaptation, type) {
-
-        let i,
-            len,
-            representation,
-            col,
-            mimeTypeRegEx,
-            codecs;
-        let result = false;
-        let found = false;
-
         if (!adaptation) {
             throw new Error('adaptation is not defined');
         }
@@ -84,57 +76,72 @@ function DashManifestModel() {
             throw new Error('type is not defined');
         }
 
-        if (adaptation.hasOwnProperty('ContentComponent_asArray')) {
-            col = adaptation.ContentComponent_asArray;
-        }
-
-        mimeTypeRegEx = (type !== Constants.TEXT) ? new RegExp(type) : new RegExp('(vtt|ttml)');
-
-        if (adaptation.Representation_asArray && adaptation.Representation_asArray.length && adaptation.Representation_asArray.length > 0) {
-            let essentialProperties = getEssentialPropertiesForRepresentation(adaptation.Representation_asArray[0]);
+        // Check for thumbnail images
+        if (adaptation.Representation_asArray && adaptation.Representation_asArray.length) {
+            const essentialProperties = getEssentialPropertiesForRepresentation(adaptation.Representation_asArray[0]);
             if (essentialProperties && essentialProperties.length > 0 && THUMBNAILS_SCHEME_ID_URIS.indexOf(essentialProperties[0].schemeIdUri) >= 0) {
-                return type === Constants.IMAGE;
-            }
-            if (adaptation.Representation_asArray[0].hasOwnProperty(DashConstants.CODECS)) {
-                // Just check the start of the codecs string
-                codecs = adaptation.Representation_asArray[0].codecs;
-                if (codecs.search(Constants.STPP) === 0 || codecs.search(Constants.WVTT) === 0) {
-                    return type === Constants.FRAGMENTED_TEXT;
-                }
+                return (type === Constants.IMAGE);
             }
         }
 
-        if (col) {
-            if (col.length > 1) {
+        // Check ContentComponent.contentType
+        if (adaptation.ContentComponent_asArray && adaptation.ContentComponent_asArray.length > 0) {
+            if (adaptation.ContentComponent_asArray.length > 1) {
                 return (type === Constants.MUXED);
-            } else if (col[0] && col[0].contentType === type) {
-                result = true;
-                found = true;
+            } else if (adaptation.ContentComponent_asArray[0].contentType === type) {
+                return true;
             }
         }
 
+        const mimeTypeRegEx = (type === Constants.TEXT) ? new RegExp('(ttml|vtt|wvtt|stpp)') : new RegExp(type);
+
+        // Check codecs
+        if (adaptation.Representation_asArray && adaptation.Representation_asArray.length) {
+            const codecs = adaptation.Representation_asArray[0].codecs;
+            if (mimeTypeRegEx.test(codecs)) {
+                return true;
+            }
+        }
+
+        // Check Adaptation's mimeType
         if (adaptation.hasOwnProperty(DashConstants.MIME_TYPE)) {
-            result = mimeTypeRegEx.test(adaptation.mimeType);
-            found = true;
+            return mimeTypeRegEx.test(adaptation.mimeType);
         }
 
-        // couldn't find on adaptationset, so check a representation
-        if (!found) {
-            i = 0;
-            len = adaptation.Representation_asArray && adaptation.Representation_asArray.length ? adaptation.Representation_asArray.length : 0;
-            while (!found && i < len) {
+        // Check Representation's mimeType
+        if (adaptation.Representation_asArray) {
+            let representation;
+            for (let i = 0; i < adaptation.Representation_asArray.length; i++) {
                 representation = adaptation.Representation_asArray[i];
-
                 if (representation.hasOwnProperty(DashConstants.MIME_TYPE)) {
-                    result = mimeTypeRegEx.test(representation.mimeType);
-                    found = true;
+                    return mimeTypeRegEx.test(representation.mimeType);
                 }
-
-                i++;
             }
         }
 
-        return result;
+        return false;
+    }
+
+    function getIsFragmented(adaptation) {
+        if (!adaptation) {
+            throw new Error('adaptation is not defined');
+        }
+        if (adaptation.hasOwnProperty(DashConstants.SEGMENT_TEMPLATE) ||
+            adaptation.hasOwnProperty(DashConstants.SEGMENT_TIMELINE) ||
+            adaptation.hasOwnProperty(DashConstants.SEGMENT_LIST) ||
+            adaptation.hasOwnProperty(DashConstants.SEGMENT_BASE)) {
+            return true;
+        }
+        if (adaptation.Representation_asArray && adaptation.Representation_asArray.length > 0) {
+            const representation = adaptation.Representation_asArray[0];
+            if (representation.hasOwnProperty(DashConstants.SEGMENT_TEMPLATE) ||
+                representation.hasOwnProperty(DashConstants.SEGMENT_TIMELINE) ||
+                representation.hasOwnProperty(DashConstants.SEGMENT_LIST) ||
+                representation.hasOwnProperty(DashConstants.SEGMENT_BASE)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     function getIsAudio(adaptation) {
@@ -145,8 +152,8 @@ function DashManifestModel() {
         return getIsTypeOf(adaptation, Constants.VIDEO);
     }
 
-    function getIsFragmentedText(adaptation) {
-        return getIsTypeOf(adaptation, Constants.FRAGMENTED_TEXT);
+    function getIsText(adaptation) {
+        return getIsTypeOf(adaptation, Constants.TEXT);
     }
 
     function getIsMuxed(adaptation) {
@@ -157,16 +164,58 @@ function DashManifestModel() {
         return getIsTypeOf(adaptation, Constants.IMAGE);
     }
 
-    function getIsTextTrack(type) {
-        return (type === 'text/vtt' || type === 'application/ttml+xml');
+    function getProducerReferenceTimesForAdaptation(adaptation) {
+        const prtArray = adaptation && adaptation.hasOwnProperty(DashConstants.PRODUCERREFERENCETIME_ASARRAY) ? adaptation[DashConstants.PRODUCERREFERENCETIME_ASARRAY] : [];
+
+        // ProducerReferenceTime elements can also be contained in Representations
+        const representationsArray = adaptation && adaptation.hasOwnProperty(DashConstants.REPRESENTATION_ASARRAY) ? adaptation[DashConstants.REPRESENTATION_ASARRAY] : [];
+
+        representationsArray.forEach((rep) => {
+            if (rep.hasOwnProperty(DashConstants.PRODUCERREFERENCETIME_ASARRAY)) {
+                prtArray.push(...rep[DashConstants.PRODUCERREFERENCETIME_ASARRAY]);
+            }
+        });
+
+        const prtsForAdaptation = [];
+
+        // Unlikely to have multiple ProducerReferenceTimes.
+        prtArray.forEach((prt) => {
+            const entry = new ProducerReferenceTime();
+
+            if (prt.hasOwnProperty(DashConstants.ID)) {
+                entry[DashConstants.ID] = prt[DashConstants.ID];
+            } else {
+                // Ignore. Missing mandatory attribute
+                return;
+            }
+
+            if (prt.hasOwnProperty(DashConstants.WALL_CLOCK_TIME)) {
+                entry[DashConstants.WALL_CLOCK_TIME] = prt[DashConstants.WALL_CLOCK_TIME];
+            } else {
+                // Ignore. Missing mandatory attribute
+                return;
+            }
+
+            if (prt.hasOwnProperty(DashConstants.PRESENTATION_TIME)) {
+                entry[DashConstants.PRESENTATION_TIME] = prt[DashConstants.PRESENTATION_TIME];
+            } else {
+                // Ignore. Missing mandatory attribute
+                return;
+            }
+
+            // Not interested in other attributes for now
+            // UTC element contained must be same as that in the MPD
+            prtsForAdaptation.push(entry);
+        })
+
+        return prtsForAdaptation;
     }
 
     function getLanguageForAdaptation(adaptation) {
         let lang = '';
 
         if (adaptation && adaptation.hasOwnProperty(DashConstants.LANG)) {
-            //Filter out any other characters not allowed according to RFC5646
-            lang = adaptation.lang.replace(/[^A-Za-z0-9-]/g, '');
+            lang = adaptation.lang;
         }
 
         return lang;
@@ -405,6 +454,16 @@ function DashManifestModel() {
         });
     }
 
+    function getSelectionPriority(realAdaption) {
+        try {
+            const priority = realAdaption && typeof realAdaption.selectionPriority !== 'undefined' ? parseInt(realAdaption.selectionPriority) : 1;
+
+            return isNaN(priority) ? 1 : priority;
+        } catch (e) {
+            return 1;
+        }
+    }
+
     function getEssentialPropertiesForRepresentation(realRepresentation) {
         if (!realRepresentation || !realRepresentation.EssentialProperty_asArray || !realRepresentation.EssentialProperty_asArray.length) return null;
 
@@ -458,6 +517,9 @@ function DashManifestModel() {
                 }
                 if (realRepresentation.hasOwnProperty(DashConstants.CODECS)) {
                     voRepresentation.codecs = realRepresentation.codecs;
+                }
+                if (realRepresentation.hasOwnProperty(DashConstants.MIME_TYPE)) {
+                    voRepresentation.mimeType = realRepresentation[DashConstants.MIME_TYPE];
                 }
                 if (realRepresentation.hasOwnProperty(DashConstants.CODEC_PRIVATE_DATA)) {
                     voRepresentation.codecPrivateData = realRepresentation.codecPrivateData;
@@ -521,7 +583,10 @@ function DashManifestModel() {
                             // initialization source url will be determined from
                             // BaseURL when resolved at load time.
                         }
-                    } else if (realRepresentation.hasOwnProperty(DashConstants.MIME_TYPE) && getIsTextTrack(realRepresentation.mimeType)) {
+                    } else if (getIsText(processedRealAdaptation) &&
+                        getIsFragmented(processedRealAdaptation) &&
+                        processedRealAdaptation.mimeType &&
+                        processedRealAdaptation.mimeType.indexOf('application/mp4') === -1) {
                         voRepresentation.range = 0;
                     }
 
@@ -575,6 +640,9 @@ function DashManifestModel() {
     }
 
     function calcSegmentDuration(segmentTimeline) {
+        if (!segmentTimeline || !segmentTimeline.S_asArray) {
+            return NaN;
+        }
         let s0 = segmentTimeline.S_asArray[0];
         let s1 = segmentTimeline.S_asArray[1];
         return s0.hasOwnProperty('d') ? s0.d : (s1.t - s0.t);
@@ -610,12 +678,12 @@ function DashManifestModel() {
                     voAdaptationSet.type = Constants.AUDIO;
                 } else if (getIsVideo(realAdaptationSet)) {
                     voAdaptationSet.type = Constants.VIDEO;
-                } else if (getIsFragmentedText(realAdaptationSet)) {
-                    voAdaptationSet.type = Constants.FRAGMENTED_TEXT;
+                } else if (getIsText(realAdaptationSet)) {
+                    voAdaptationSet.type = Constants.TEXT;
                 } else if (getIsImage(realAdaptationSet)) {
                     voAdaptationSet.type = Constants.IMAGE;
                 } else {
-                    voAdaptationSet.type = Constants.TEXT;
+                    logger.warn('Unknown Adaptation stream type');
                 }
                 voAdaptations.push(voAdaptationSet);
             }
@@ -680,6 +748,10 @@ function DashManifestModel() {
 
                 if (realPeriod.hasOwnProperty(DashConstants.DURATION)) {
                     voPeriod.duration = realPeriod.duration;
+                }
+
+                if (voPreviousPeriod) {
+                    voPreviousPeriod.nextPeriodId = voPeriod.id;
                 }
 
                 voPeriods.push(voPeriod);
@@ -825,14 +897,17 @@ function DashManifestModel() {
 
                     if (currentMpdEvent.hasOwnProperty(DashConstants.PRESENTATION_TIME)) {
                         event.presentationTime = currentMpdEvent.presentationTime;
-                        const presentationTimeOffset = eventStream.presentationTimeOffset ? eventStream.presentationTimeOffset / eventStream.timescale : 0;
-                        event.calculatedPresentationTime = event.presentationTime / eventStream.timescale + period.start - presentationTimeOffset;
                     }
+                    const presentationTimeOffset = eventStream.presentationTimeOffset ? eventStream.presentationTimeOffset / eventStream.timescale : 0;
+                    event.calculatedPresentationTime = event.presentationTime / eventStream.timescale + period.start - presentationTimeOffset;
+
                     if (currentMpdEvent.hasOwnProperty(DashConstants.DURATION)) {
                         event.duration = currentMpdEvent.duration / eventStream.timescale;
                     }
                     if (currentMpdEvent.hasOwnProperty(DashConstants.ID)) {
                         event.id = currentMpdEvent.id;
+                    } else {
+                        event.id = null;
                     }
 
                     if (currentMpdEvent.Signal && currentMpdEvent.Signal.Binary) {
@@ -845,6 +920,7 @@ function DashManifestModel() {
                         // string representation'.
                         event.messageData =
                             currentMpdEvent.messageData ||
+                            currentMpdEvent.__cdata ||
                             currentMpdEvent.__text;
                     }
 
@@ -856,7 +932,7 @@ function DashManifestModel() {
         return events;
     }
 
-    function getEventStreams(inbandStreams, representation) {
+    function getEventStreams(inbandStreams, representation, period) {
         const eventStreams = [];
         let i;
 
@@ -879,12 +955,13 @@ function DashManifestModel() {
                 eventStream.value = inbandStreams[i].value;
             }
             eventStreams.push(eventStream);
+            eventStream.period = period;
         }
 
         return eventStreams;
     }
 
-    function getEventStreamForAdaptationSet(manifest, adaptation) {
+    function getEventStreamForAdaptationSet(manifest, adaptation, period) {
         let inbandStreams,
             periodArray,
             adaptationArray;
@@ -899,10 +976,10 @@ function DashManifestModel() {
             }
         }
 
-        return getEventStreams(inbandStreams, null);
+        return getEventStreams(inbandStreams, null, period);
     }
 
-    function getEventStreamForRepresentation(manifest, representation) {
+    function getEventStreamForRepresentation(manifest, representation, period) {
         let inbandStreams,
             periodArray,
             adaptationArray,
@@ -921,7 +998,7 @@ function DashManifestModel() {
             }
         }
 
-        return getEventStreams(inbandStreams, representation);
+        return getEventStreams(inbandStreams, representation, period);
     }
 
     function getUTCTimingSources(manifest) {
@@ -1039,6 +1116,32 @@ function DashManifestModel() {
         return baseUrls;
     }
 
+    function getContentSteering(manifest) {
+        if (manifest && manifest.hasOwnProperty(DashConstants.CONTENT_STEERING_AS_ARRAY)) {
+            // Only one ContentSteering element is supported on MPD level
+            const element = manifest[DashConstants.CONTENT_STEERING_AS_ARRAY][0];
+            const entry = new ContentSteering();
+
+            entry.serverUrl =  element.__text;
+
+            if (element.hasOwnProperty(DashConstants.DEFAULT_SERVICE_LOCATION)) {
+                entry.defaultServiceLocation = element[DashConstants.DEFAULT_SERVICE_LOCATION];
+            }
+
+            if (element.hasOwnProperty(DashConstants.QUERY_BEFORE_START)) {
+                entry.queryBeforeStart = element[DashConstants.QUERY_BEFORE_START].toLowerCase() === 'true';
+            }
+
+            if (element.hasOwnProperty(DashConstants.PROXY_SERVER_URL)) {
+                entry.proxyServerUrl = element[DashConstants.PROXY_SERVER_URL];
+            }
+
+            return entry;
+        }
+
+        return undefined;
+    }
+
     function getLocation(manifest) {
         if (manifest && manifest.hasOwnProperty(Constants.LOCATION)) {
             // for now, do not support multiple Locations -
@@ -1077,7 +1180,13 @@ function DashManifestModel() {
         if (manifest && manifest.hasOwnProperty(DashConstants.SERVICE_DESCRIPTION)) {
             for (const sd of manifest.ServiceDescription_asArray) {
                 // Convert each of the properties defined in
-                let id, schemeIdUri, latency, playbackRate;
+                let id = null,
+                    schemeIdUri = null,
+                    latency = null,
+                    playbackRate = null,
+                    operatingQuality = null,
+                    operatingBandwidth = null;
+
                 for (const prop in sd) {
                     if (sd.hasOwnProperty(prop)) {
                         if (prop === DashConstants.ID) {
@@ -1086,34 +1195,51 @@ function DashManifestModel() {
                             schemeIdUri = sd[prop].schemeIdUri;
                         } else if (prop === DashConstants.SERVICE_DESCRIPTION_LATENCY) {
                             latency = {
-                                target: sd[prop].target,
-                                max: sd[prop].max,
-                                min: sd[prop].min
+                                target: parseInt(sd[prop].target),
+                                max: parseInt(sd[prop].max),
+                                min: parseInt(sd[prop].min),
+                                referenceId: parseInt(sd[prop].referenceId)
                             };
                         } else if (prop === DashConstants.SERVICE_DESCRIPTION_PLAYBACK_RATE) {
                             playbackRate = {
-                                max: sd[prop].max,
-                                min: sd[prop].min
+                                max: parseFloat(sd[prop].max),
+                                min: parseFloat(sd[prop].min)
                             };
+                        } else if (prop === DashConstants.SERVICE_DESCRIPTION_OPERATING_QUALITY) {
+                            operatingQuality = {
+                                mediaType: sd[prop].mediaType,
+                                max: parseInt(sd[prop].max),
+                                min: parseInt(sd[prop].min),
+                                target: parseInt(sd[prop].target),
+                                type: sd[prop].type,
+                                maxQualityDifference: parseInt(sd[prop].maxQualityDifference)
+                            }
+                        } else if (prop === DashConstants.SERVICE_DESCRIPTION_OPERATING_BANDWIDTH) {
+                            operatingBandwidth = {
+                                mediaType: sd[prop].mediaType,
+                                max: parseInt(sd[prop].max),
+                                min: parseInt(sd[prop].min),
+                                target: parseInt(sd[prop].target)
+                            }
                         }
                     }
                 }
-                // we have a ServiceDescription for low latency. Add it if it really has parameters defined
-                if (schemeIdUri === Constants.SERVICE_DESCRIPTION_LL_SCHEME && (latency || playbackRate)) {
-                    serviceDescriptions.push({
-                        id,
-                        schemeIdUri,
-                        latency,
-                        playbackRate
-                    });
-                }
+
+                serviceDescriptions.push({
+                    id,
+                    schemeIdUri,
+                    latency,
+                    playbackRate,
+                    operatingQuality,
+                    operatingBandwidth
+                });
             }
         }
 
         return serviceDescriptions;
     }
 
-    function getSupplementalPropperties(adaptation) {
+    function getSupplementalProperties(adaptation) {
         const supplementalProperties = {};
 
         if (adaptation && adaptation.hasOwnProperty(DashConstants.SUPPLEMENTAL_PROPERTY)) {
@@ -1139,53 +1265,57 @@ function DashManifestModel() {
     }
 
     instance = {
-        getIsTypeOf: getIsTypeOf,
-        getIsTextTrack: getIsTextTrack,
-        getLanguageForAdaptation: getLanguageForAdaptation,
-        getViewpointForAdaptation: getViewpointForAdaptation,
-        getRolesForAdaptation: getRolesForAdaptation,
-        getAccessibilityForAdaptation: getAccessibilityForAdaptation,
-        getAudioChannelConfigurationForAdaptation: getAudioChannelConfigurationForAdaptation,
-        getAudioChannelConfigurationForRepresentation: getAudioChannelConfigurationForRepresentation,
-        getAdaptationForIndex: getAdaptationForIndex,
-        getIndexForAdaptation: getIndexForAdaptation,
-        getAdaptationForId: getAdaptationForId,
-        getAdaptationsForType: getAdaptationsForType,
+        getIsTypeOf,
+        getIsText,
+        getIsFragmented,
+        getProducerReferenceTimesForAdaptation,
+        getLanguageForAdaptation,
+        getViewpointForAdaptation,
+        getRolesForAdaptation,
+        getAccessibilityForAdaptation,
+        getAudioChannelConfigurationForAdaptation,
+        getAudioChannelConfigurationForRepresentation,
+        getAdaptationForIndex,
+        getIndexForAdaptation,
+        getAdaptationForId,
+        getAdaptationsForType,
         getRealPeriods,
         getRealPeriodForIndex,
-        getCodec: getCodec,
-        getMimeType: getMimeType,
-        getKID: getKID,
-        getLabelsForAdaptation: getLabelsForAdaptation,
-        getContentProtectionData: getContentProtectionData,
-        getIsDynamic: getIsDynamic,
-        getId: getId,
-        hasProfile: hasProfile,
-        getDuration: getDuration,
-        getBandwidth: getBandwidth,
-        getManifestUpdatePeriod: getManifestUpdatePeriod,
-        getPublishTime: getPublishTime,
-        getRepresentationCount: getRepresentationCount,
-        getBitrateListForAdaptation: getBitrateListForAdaptation,
-        getRepresentationFor: getRepresentationFor,
-        getRepresentationsForAdaptation: getRepresentationsForAdaptation,
-        getAdaptationsForPeriod: getAdaptationsForPeriod,
-        getRegularPeriods: getRegularPeriods,
-        getMpd: getMpd,
-        getEventsForPeriod: getEventsForPeriod,
+        getCodec,
+        getSelectionPriority,
+        getMimeType,
+        getKID,
+        getLabelsForAdaptation,
+        getContentProtectionData,
+        getIsDynamic,
+        getId,
+        hasProfile,
+        getDuration,
+        getBandwidth,
+        getManifestUpdatePeriod,
+        getPublishTime,
+        getRepresentationCount,
+        getBitrateListForAdaptation,
+        getRepresentationFor,
+        getRepresentationsForAdaptation,
+        getAdaptationsForPeriod,
+        getRegularPeriods,
+        getMpd,
+        getEventsForPeriod,
         getEssentialPropertiesForRepresentation,
-        getEventStreamForAdaptationSet: getEventStreamForAdaptationSet,
-        getEventStreamForRepresentation: getEventStreamForRepresentation,
-        getUTCTimingSources: getUTCTimingSources,
-        getBaseURLsFromElement: getBaseURLsFromElement,
-        getRepresentationSortFunction: getRepresentationSortFunction,
-        getLocation: getLocation,
-        getPatchLocation: getPatchLocation,
-        getSuggestedPresentationDelay: getSuggestedPresentationDelay,
-        getAvailabilityStartTime: getAvailabilityStartTime,
-        getServiceDescriptions: getServiceDescriptions,
-        getSupplementalPropperties: getSupplementalPropperties,
-        setConfig: setConfig
+        getEventStreamForAdaptationSet,
+        getEventStreamForRepresentation,
+        getUTCTimingSources,
+        getBaseURLsFromElement,
+        getRepresentationSortFunction,
+        getContentSteering,
+        getLocation,
+        getPatchLocation,
+        getSuggestedPresentationDelay,
+        getAvailabilityStartTime,
+        getServiceDescriptions,
+        getSupplementalProperties,
+        setConfig
     };
 
     setup();

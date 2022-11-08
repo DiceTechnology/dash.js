@@ -42,7 +42,6 @@ const uuid = '9a04f079-9840-4286-ab92-e65be0885f95';
 const systemString = ProtectionConstants.PLAYREADY_KEYSTEM_STRING;
 const schemeIdURI = 'urn:uuid:' + uuid;
 const PRCDMData = '<PlayReadyCDMData type="LicenseAcquisition"><LicenseAcquisition version="1.0" Proactive="false"><CustomData encoding="base64encoded">%CUSTOMDATA%</CustomData></LicenseAcquisition></PlayReadyCDMData>';
-let protData;
 
 function KeySystemPlayReady(config) {
 
@@ -50,6 +49,7 @@ function KeySystemPlayReady(config) {
     let instance;
     let messageFormat = 'utf-16';
     const BASE64 = config.BASE64;
+    const settings = config.settings;
 
     function checkConfig() {
         if (!BASE64 || !BASE64.hasOwnProperty('decodeArray') || !BASE64.hasOwnProperty('decodeArray') ) {
@@ -62,6 +62,15 @@ function KeySystemPlayReady(config) {
             xmlDoc;
         const headers = {};
         const parser = new DOMParser();
+
+        if (settings && settings.get().streaming.protection.detectPlayreadyMessageFormat) {
+            // If message format configured/defaulted to utf-16 AND number of bytes is odd, assume 'unwrapped' raw CDM message.
+            if (messageFormat === 'utf-16' && message && message.byteLength % 2 === 1) {
+                headers['Content-Type'] = 'text/xml; charset=utf-8';
+                return headers;
+            }
+        }
+
         const dataview = (messageFormat === 'utf-16') ? new Uint16Array(message) : new Uint8Array(message);
 
         msg = String.fromCharCode.apply(null, dataview);
@@ -90,6 +99,14 @@ function KeySystemPlayReady(config) {
     function getLicenseRequestFromMessage(message) {
         let licenseRequest = null;
         const parser = new DOMParser();
+
+        if (settings && settings.get().streaming.protection.detectPlayreadyMessageFormat) {
+            // If message format configured/defaulted to utf-16 AND number of bytes is odd, assume 'unwrapped' raw CDM message.
+            if (messageFormat === 'utf-16' && message && message.byteLength % 2 === 1) {
+                return message;
+            }
+        }
+
         const dataview = (messageFormat === 'utf-16') ? new Uint16Array(message) : new Uint8Array(message);
 
         checkConfig();
@@ -236,77 +253,52 @@ function KeySystemPlayReady(config) {
     }
 
     /**
-     * Initialize the Key system with protection data
-     * @param {Object} protectionData the protection data
-     */
-    function init(protectionData) {
-        if (protectionData) {
-            protData = protectionData;
-        }
-    }
-
-
-    /**
      * Get Playready Custom data
      */
-    function getCDMData() {
+    function getCDMData(_cdmData) {
         let customData,
             cdmData,
             cdmDataBytes,
             i;
 
         checkConfig();
-        if (protData && protData.cdmData) {
-            // Convert custom data into multibyte string
-            customData = [];
-            for (i = 0; i < protData.cdmData.length; ++i) {
-                customData.push(protData.cdmData.charCodeAt(i));
-                customData.push(0);
-            }
-            customData = String.fromCharCode.apply(null, customData);
+        if (!_cdmData) return null;
 
-            // Encode in Base 64 the custom data string
-            customData = BASE64.encode(customData);
+        // Convert custom data into multibyte string
+        customData = [];
+        for (i = 0; i < _cdmData.length; ++i) {
+            customData.push(_cdmData.charCodeAt(i));
+            customData.push(0);
+        }
+        customData = String.fromCharCode.apply(null, customData);
 
-            // Initialize CDM data with Base 64 encoded custom data
-            // (see https://msdn.microsoft.com/en-us/library/dn457361.aspx)
-            cdmData = PRCDMData.replace('%CUSTOMDATA%', customData);
+        // Encode in Base 64 the custom data string
+        customData = BASE64.encode(customData);
 
-            // Convert CDM data into multibyte characters
-            cdmDataBytes = [];
-            for (i = 0; i < cdmData.length; ++i) {
-                cdmDataBytes.push(cdmData.charCodeAt(i));
-                cdmDataBytes.push(0);
-            }
+        // Initialize CDM data with Base 64 encoded custom data
+        // (see https://msdn.microsoft.com/en-us/library/dn457361.aspx)
+        cdmData = PRCDMData.replace('%CUSTOMDATA%', customData);
 
-            return new Uint8Array(cdmDataBytes).buffer;
+        // Convert CDM data into multibyte characters
+        cdmDataBytes = [];
+        for (i = 0; i < cdmData.length; ++i) {
+            cdmDataBytes.push(cdmData.charCodeAt(i));
+            cdmDataBytes.push(0);
         }
 
-        return null;
-    }
-
-    function getSessionId(cp) {
-        // Get sessionId from protectionData or from manifest
-        if (protData && protData.sessionId) {
-            return protData.sessionId;
-        } else if (cp && cp.sessionId) {
-            return cp.sessionId;
-        }
-        return null;
+        return new Uint8Array(cdmDataBytes).buffer;
     }
 
     instance = {
-        uuid: uuid,
-        schemeIdURI: schemeIdURI,
-        systemString: systemString,
-        getInitData: getInitData,
-        getRequestHeadersFromMessage: getRequestHeadersFromMessage,
-        getLicenseRequestFromMessage: getLicenseRequestFromMessage,
-        getLicenseServerURLFromInitData: getLicenseServerURLFromInitData,
-        getCDMData: getCDMData,
-        getSessionId: getSessionId,
-        setPlayReadyMessageFormat: setPlayReadyMessageFormat,
-        init: init
+        uuid,
+        schemeIdURI,
+        systemString,
+        getInitData,
+        getRequestHeadersFromMessage,
+        getLicenseRequestFromMessage,
+        getLicenseServerURLFromInitData,
+        getCDMData,
+        setPlayReadyMessageFormat
     };
 
     return instance;
