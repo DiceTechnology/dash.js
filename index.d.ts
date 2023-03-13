@@ -1145,6 +1145,7 @@ declare namespace dashjs {
         height: number;
         scanType: string;
         qualityIndex: number;
+        drmDefaultKeyId: string;
     }
 
     export interface FragmentRequest {

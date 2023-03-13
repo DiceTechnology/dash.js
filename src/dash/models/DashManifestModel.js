@@ -444,12 +444,25 @@ function DashManifestModel() {
         const realRepresentations = processedRealAdaptation && Array.isArray(processedRealAdaptation.Representation_asArray) ? processedRealAdaptation.Representation_asArray : [];
 
         return realRepresentations.map((realRepresentation) => {
+            const contentProtection = this.getContentProtectionData(realRepresentation)
+            if (contentProtection) {
+                // Get the default key ID and apply it to all key systems
+                const keyIds = contentProtection.map(cp => this.getKID(cp)).filter(kid => kid !== null);
+                if (keyIds.length) {
+                    const keyId = keyIds[0];
+                    contentProtection.forEach(cp => {
+                        cp.keyId = keyId;
+                    });
+                }
+            }
+
             return {
                 bandwidth: realRepresentation.bandwidth,
                 width: realRepresentation.width || 0,
                 height: realRepresentation.height || 0,
                 scanType: realRepresentation.scanType || null,
-                id: realRepresentation.id || null
+                id: realRepresentation.id || null,
+                contentProtection
             };
         });
     }

@@ -46,6 +46,7 @@ import Debug from '../../core/Debug';
 import {HTTPRequest} from '../vo/metrics/HTTPRequest';
 import {checkInteger} from '../utils/SupervisorTools';
 import MediaPlayerEvents from '../MediaPlayerEvents';
+import CommonEncryption from '../protection/CommonEncryption';
 
 const DEFAULT_VIDEO_BITRATE = 1000;
 const DEFAULT_AUDIO_BITRATE = 100;
@@ -804,6 +805,15 @@ function AbrController() {
             bitrateInfo.width = bitrateList[i].width;
             bitrateInfo.height = bitrateList[i].height;
             bitrateInfo.scanType = bitrateList[i].scanType;
+
+            const contentProtection = bitrateList[i].contentProtection ?? mediaInfo.contentProtection;
+            if (contentProtection) {
+                const cenc = CommonEncryption.findCencContentProtection(contentProtection);
+                if (cenc && cenc.keyId) {
+                    bitrateInfo.drmDefaultKeyId = cenc.keyId.replaceAll('-', '');
+                }
+            }
+
             infoList.push(bitrateInfo);
         }
 
