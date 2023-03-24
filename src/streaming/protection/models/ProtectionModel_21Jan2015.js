@@ -261,8 +261,23 @@ function ProtectionModel_21Jan2015(config) {
                 .then(() => {
                     resolve(keySystem);
                 })
-                .catch(function () {
-                    reject({error: 'Error selecting keys system (' + keySystemAccess.keySystem.systemString + ')! Could not create MediaKeys -- TODO'});
+                .catch(function (error) {
+                    function getErrorDetails(error) {
+                        try {
+                            if (typeof error === 'string') {
+                                return error;
+                            }
+                            if (typeof error !== 'object') {
+                                return 'unknown error';
+                            }
+                            const { code, message, name } = error;
+
+                            return `Code: ${code} (${error[code]}) Name: ${name} Message: ${message}`;
+                        } catch (e) {
+                            return 'failed to get error details';
+                        }
+                    }
+                    reject({error: 'Error selecting keys system (' + keySystemAccess.keySystem.systemString + ')! Could not create MediaKeys -- ' + getErrorDetails(error)});
                 });
         })
     }
