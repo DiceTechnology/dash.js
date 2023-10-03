@@ -102,7 +102,7 @@ function AbandonRequestsRule(config) {
                 fragmentInfo.id = req.index;
             }
             fragmentInfo.bytesLoaded = req.bytesLoaded;
-            fragmentInfo.elapsedTime = new Date().getTime() - fragmentInfo.firstByteTime;
+            fragmentInfo.elapsedTime = new Date().getTime() - fragmentInfo.firstByteTime; // Elapsed milliseconds since first byte
 
             if (fragmentInfo.bytesLoaded > 0 && fragmentInfo.elapsedTime > 0) {
                 storeLastRequestThroughputByType(mediaType, Math.round(fragmentInfo.bytesLoaded * 8 / fragmentInfo.elapsedTime));
@@ -119,22 +119,32 @@ function AbandonRequestsRule(config) {
                 if (fragmentInfo.estimatedTimeOfDownload < fragmentInfo.segmentDuration * ABANDON_MULTIPLIER || rulesContext.getRepresentationInfo().quality === 0 ) {
                     return switchRequest;
                 } else if (!abandonDict.hasOwnProperty(fragmentInfo.id)) {
-
+                    const measuredBandiwdthInKbps = fragmentInfo.measuredBandwidthInKbps;
                     const abrController = rulesContext.getAbrController();
                     const bytesRemaining = fragmentInfo.bytesTotal - fragmentInfo.bytesLoaded;
                     const bitrateList = abrController.getBitrateList(mediaInfo);
                     const quality = abrController.getQualityForBitrate(mediaInfo, fragmentInfo.measuredBandwidthInKbps * settings.get().streaming.abr.bandwidthSafetyFactor, streamId);
                     const minQuality = abrController.getMinAllowedIndexFor(mediaType, streamId);
                     const newQuality = (minQuality !== undefined) ? Math.max(minQuality, quality) : quality;
-                    const estimateOtherBytesTotal = fragmentInfo.bytesTotal * bitrateList[newQuality].bitrate / bitrateList[abrController.getQualityFor(mediaType, streamId)].bitrate;
+                    const newQualityBitrate = bitrateList[newQuality].bitrate;
+                    const oldQualityBitrate =  bitrateList[abrController.getQualityFor(mediaType, streamId)].bitrate;
+                    const estimateOtherBytesTotal = fragmentInfo.bytesTotal / oldQualityBitrate * newQualityBitrate;
 
-                    if (bytesRemaining > estimateOtherBytesTotal) {
+                    const throughputHistory = abrController.getThroughputHistory();
+                    const estimatedLatency = throughputHistory.getAverageLatency(mediaType);
+
+                    const timeRemainingMilliseconds = bytesRemaining * 8 / measuredBandiwdthInKbps;
+                    const estimatedOtherTimeRemainingMilliseconds = estimateOtherBytesTotal * 8 / measuredBandiwdthInKbps + estimatedLatency;
+
+                    if (timeRemainingMilliseconds > estimatedOtherTimeRemainingMilliseconds) {
                         switchRequest.quality = newQuality;
                         switchRequest.reason.throughput = fragmentInfo.measuredBandwidthInKbps;
                         switchRequest.reason.fragmentID = fragmentInfo.id;
                         abandonDict[fragmentInfo.id] = fragmentInfo;
                         logger.debug('[' + mediaType + '] frag id',fragmentInfo.id,' is asking to abandon and switch to quality to ', newQuality, ' measured bandwidth was', fragmentInfo.measuredBandwidthInKbps);
                         delete fragmentDict[mediaType][fragmentInfo.id];
+                    } else if (bytesRemaining > estimateOtherBytesTotal) {
+                        logger.debug('DORIS - THIS IS SKIPPED - [' + mediaType + '] frag id',fragmentInfo.id,' is asking to abandon and switch to quality to ', newQuality, ' measured bandwidth was', fragmentInfo.measuredBandwidthInKbps);
                     }
                 }
             } else if (fragmentInfo.bytesLoaded === fragmentInfo.bytesTotal) {
