@@ -139,7 +139,10 @@ function AbandonRequestsRule(config) {
                     if (timeRemainingMilliseconds > estimatedOtherTimeRemainingMilliseconds) {
                         switchRequest.quality = newQuality;
                         switchRequest.reason.throughput = fragmentInfo.measuredBandwidthInKbps;
+                        switchRequest.reason.throughputValues = throughputArray[mediaType];
                         switchRequest.reason.fragmentID = fragmentInfo.id;
+                        switchRequest.reason.latency = estimatedLatency;
+                        switchRequest.reason.bufferLevel = dashMetrics.getCurrentBufferLevel(mediaType);
                         abandonDict[fragmentInfo.id] = fragmentInfo;
                         logger.debug('[' + mediaType + '] frag id',fragmentInfo.id,' is asking to abandon and switch to quality to ', newQuality, ' measured bandwidth was', fragmentInfo.measuredBandwidthInKbps);
                         delete fragmentDict[mediaType][fragmentInfo.id];

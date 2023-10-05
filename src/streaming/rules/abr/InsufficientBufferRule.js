@@ -115,7 +115,7 @@ function InsufficientBufferRule(config) {
             const bitrate = throughput * (bufferLevel / fragmentDuration) * INSUFFICIENT_BUFFER_SAFETY_FACTOR;
 
             switchRequest.quality = abrController.getQualityForBitrate(mediaInfo, bitrate, streamId, latency);
-            switchRequest.reason = 'InsufficientBufferRule: being conservative to avoid immediate rebuffering';
+            switchRequest.reason = {name: 'InsufficientBufferRule', reason: 'Being conservative to avoid immediate rebuffering', bufferLevel:bufferLevel, throughput: throughput, latency: latency, bitrate: bitrate};
         }
 
         return switchRequest;
