@@ -596,12 +596,10 @@ function DashManifestModel() {
                         }
                     } else {
                         const mimeType = processedRealAdaptation.mimeType || getMimeType(processedRealAdaptation);
-                        if (
-                            getIsText(processedRealAdaptation) &&
+                        if (getIsText(processedRealAdaptation) &&
                             getIsFragmented(processedRealAdaptation) &&
                             mimeType &&
-                            mimeType.indexOf('application/mp4') === -1
-                        ) {
+                            mimeType.indexOf('application/mp4') === -1) {
                             voRepresentation.range = 0;
                         }
                     }
