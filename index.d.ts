@@ -182,6 +182,9 @@ declare namespace dashjs {
             buffer?: {
                 enableSeekDecorrelationFix?: boolean,
                 fastSwitchEnabled?: boolean,
+                fastSwitchFragmentCount?: number,
+                fastSwitchSafeMinBufferDuration?: number,
+                fastSwitchSafeMinFragmentCount?: number,
                 flushBufferAtTrackSwitch?: boolean,
                 reuseExistingSourceBuffers?: boolean,
                 bufferPruningInterval?: number,
