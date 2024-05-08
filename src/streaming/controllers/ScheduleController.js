@@ -116,6 +116,7 @@ function ScheduleController(config) {
         if (isNaN(topQualityIndex) || topQualityIndex != newTopQualityIndex) {
             logger.info('Top quality ' + type + ' index has changed from ' + topQualityIndex + ' to ' + newTopQualityIndex);
             topQualityIndex = newTopQualityIndex;
+            abrController.checkPlaybackQuality(type, streamId);
             return true;
         }
         return false;
