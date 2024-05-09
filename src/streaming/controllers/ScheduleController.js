@@ -64,7 +64,8 @@ function ScheduleController(config) {
         lastInitializedQuality,
         switchTrack,
         initSegmentRequired,
-        checkPlaybackQuality;
+        checkPlaybackQuality,
+        fastQualitySwitch;
 
     function setup() {
         logger = Debug(context).getInstance().getLogger(instance);
@@ -116,7 +117,6 @@ function ScheduleController(config) {
         if (isNaN(topQualityIndex) || topQualityIndex != newTopQualityIndex) {
             logger.info('Top quality ' + type + ' index has changed from ' + topQualityIndex + ' to ' + newTopQualityIndex);
             topQualityIndex = newTopQualityIndex;
-            abrController.checkPlaybackQuality(type, streamId);
             return true;
         }
         return false;
@@ -222,8 +222,21 @@ function ScheduleController(config) {
         if (!type || !currentRepresentationInfo) {
             return true;
         }
-        const bufferLevel = dashMetrics.getCurrentBufferLevel(type);
-        return bufferLevel < getBufferTarget();
+
+        const bufferTarget = getBufferTarget();
+        if (fastQualitySwitch) {
+            const time = playbackController?.getTime() ?? 0;
+            const bufferingTime = dashMetrics.getCurrentBufferingTime(type);
+            if (bufferingTime > time + bufferTarget) {
+                setFastQualitySwitch(false);
+            } else {
+                // Make sure the buffer is completely reloaded when fast quality switch is enabled.
+                return true;
+            }
+        } else {
+            const bufferLevel = dashMetrics.getCurrentBufferLevel(type);
+            return bufferLevel < getBufferTarget();
+        }
     }
 
     /**
@@ -311,6 +324,13 @@ function ScheduleController(config) {
         } catch (e) {
             return mediaPlayerModel.getStableBufferTime();
         }
+    }
+
+    function setFastQualitySwitch(value) {
+        if (value != fastQualitySwitch) {
+            logger.info(`${value ? 'starting' : 'stopping'} fast quality switch`);
+        }
+        fastQualitySwitch = value;
     }
 
     function setSwitchTrack(value) {
@@ -415,6 +435,7 @@ function ScheduleController(config) {
         topQualityIndex = NaN;
         switchTrack = false;
         initSegmentRequired = false;
+        fastQualitySwitch = false;
     }
 
     function reset() {
@@ -449,7 +470,8 @@ function ScheduleController(config) {
         getBufferTarget,
         getPlaybackController,
         setCheckPlaybackQuality,
-        setInitSegmentRequired
+        setInitSegmentRequired,
+        setFastQualitySwitch
     };
 
     setup();

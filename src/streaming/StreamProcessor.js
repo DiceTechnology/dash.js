@@ -185,7 +185,7 @@ function StreamProcessor(config) {
 
         scheduleController.initialize(hasVideoTrack);
 
-        bufferingTime = 0;
+        _setBufferingTime(0);
         shouldUseExplicitTimeForRequest = false;
     }
 
@@ -204,7 +204,7 @@ function StreamProcessor(config) {
     function resetInitialSettings() {
         mediaInfoArr = [];
         mediaInfo = null;
-        bufferingTime = 0;
+        _setBufferingTime(0);
         shouldUseExplicitTimeForRequest = false;
         qualityChangeInProgress = false;
     }
@@ -414,7 +414,7 @@ function StreamProcessor(config) {
      */
     function _mediaRequestGenerated(request) {
         if (!isNaN(request.startTime + request.duration)) {
-            bufferingTime = request.startTime + request.duration;
+            _setBufferingTime(request.startTime + request.duration);
         }
         request.delayLoadingTime = new Date().getTime() + scheduleController.getTimeToLoadDelay();
         scheduleController.setTimeToLoadDelay(0);
@@ -688,6 +688,7 @@ function StreamProcessor(config) {
             if (request.quality < representationInfo.quality && bufferLevel >= safeBufferLevel && abandonmentState !== MetricsConstants.ABANDON_LOAD) {
                 setExplicitBufferingTime(targetTime);
                 scheduleController.setCheckPlaybackQuality(false);
+                scheduleController.setFastQualitySwitch(true);
                 scheduleController.startScheduleTimer();
             } else {
                 _prepareForDefaultQualitySwitch();
@@ -1173,12 +1174,17 @@ function StreamProcessor(config) {
     }
 
     function setExplicitBufferingTime(value) {
-        bufferingTime = value;
+        _setBufferingTime(value);
         shouldUseExplicitTimeForRequest = true;
     }
 
     function finalisePlayList(time, reason) {
         dashMetrics.pushPlayListTraceMetrics(time, reason);
+    }
+
+    function _setBufferingTime(value) {
+        dashMetrics.addBufferingTime(type, value);
+        bufferingTime = value;
     }
 
     instance = {

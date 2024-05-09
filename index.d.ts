@@ -1297,6 +1297,8 @@ declare namespace dashjs {
 
         getCurrentBufferLevel(type: MediaType): number;
 
+        getCurrentBufferingTime(type: MediaType): number;
+
         getCurrentHttpRequest(type: MediaType): object;
 
         getHttpRequests(type: MediaType): object[];
