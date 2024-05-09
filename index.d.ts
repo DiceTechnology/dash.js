@@ -182,6 +182,9 @@ declare namespace dashjs {
             buffer?: {
                 enableSeekDecorrelationFix?: boolean,
                 fastSwitchEnabled?: boolean,
+                fastSwitchFragmentCount?: number,
+                fastSwitchSafeMinBufferDuration?: number,
+                fastSwitchSafeMinFragmentCount?: number,
                 flushBufferAtTrackSwitch?: boolean,
                 reuseExistingSourceBuffers?: boolean,
                 bufferPruningInterval?: number,
@@ -1293,6 +1296,8 @@ declare namespace dashjs {
         getCurrentBufferState(type: MediaType): IBufferState;
 
         getCurrentBufferLevel(type: MediaType): number;
+
+        getCurrentBufferingTime(type: MediaType): number;
 
         getCurrentHttpRequest(type: MediaType): object;
 
