@@ -603,6 +603,7 @@ function StreamProcessor(config) {
 
         // Stop scheduling until we are done with preparing the quality switch
         scheduleController.clearScheduleTimer();
+        scheduleController.setFastQualitySwitch(false);
 
         const representationInfo = getRepresentationInfo(newQuality);
         scheduleController.setCurrentRepresentation(representationInfo);
