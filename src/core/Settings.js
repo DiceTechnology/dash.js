@@ -912,6 +912,7 @@ function Settings() {
                     droppedFramesRule: true,
                     abandonRequestsRule: true
                 },
+                abandonRequestsRuleGraceTimeThreshold: 500,
                 bandwidthSafetyFactor: 0.9,
                 useDefaultABRRules: true,
                 useDeadTimeLatency: true,

@@ -36,7 +36,6 @@ function AbandonRequestsRule(config) {
 
     config = config || {};
     const ABANDON_MULTIPLIER = 1.8;
-    const GRACE_TIME_THRESHOLD = 500;
     const MIN_LENGTH_TO_AVERAGE = 5;
 
     const context = this.context;
@@ -109,7 +108,7 @@ function AbandonRequestsRule(config) {
             }
 
             if (throughputArray[mediaType].length >= MIN_LENGTH_TO_AVERAGE &&
-                fragmentInfo.elapsedTime > GRACE_TIME_THRESHOLD &&
+                fragmentInfo.elapsedTime > settings.get().streaming.abr.abandonRequestsRuleGraceTimeThreshold &&
                 fragmentInfo.bytesLoaded < fragmentInfo.bytesTotal) {
 
                 const totalSampledValue = throughputArray[mediaType].reduce((a, b) => a + b, 0);
