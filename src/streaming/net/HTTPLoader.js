@@ -131,7 +131,10 @@ function HTTPLoader(cfg) {
             }
         };
 
-        const onloadend = function () {
+        /**
+         * @param {Error} [error] httpRequest.onerror in the FetchLoader is called with the Error object
+         */
+        const onloadend = function (error) {
             if (requests.indexOf(httpRequest) === -1) {
                 return;
             } else {
@@ -172,7 +175,12 @@ function HTTPLoader(cfg) {
                         return;
                     }
 
-                    errHandler.error(new DashJSError(downloadErrorToRequestTypeMap[request.type], request.url + ' is not available', {
+                    const message = request.url + ' is not available';
+                    if (error instanceof Error) {
+                        message += ` (${error.message})`;
+                    }
+
+                    errHandler.error(new DashJSError(downloadErrorToRequestTypeMap[request.type], message, {
                         request: request,
                         response: httpRequest.response
                     }));
