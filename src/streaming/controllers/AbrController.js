@@ -273,8 +273,6 @@ function AbrController() {
             return;
         }
         const isDynamic = !!e.request.mediaInfo?.streamInfo?.manifestInfo?.isDynamic;
-
-        console.log(`Persisting estimate on frag load complete for type: ${type}, isDynamic: ${isDynamic}`);
         _saveBandwidthEstimate(type, isDynamic)
     }
 
