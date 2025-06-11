@@ -269,12 +269,13 @@ function AbrController() {
 
     function _onFragmentLoadCompleted(e) {
         const type = e.request.mediaType;
-        const streamId = e.streamId;
-        if (type && streamProcessorDict[streamId] && streamProcessorDict[streamId][type]) {
-            const streamInfo = streamProcessorDict[streamId][type].getStreamInfo();
-            const isDynamic = streamInfo && streamInfo.manifestInfo && streamInfo.manifestInfo.isDynamic;
-            _saveBandwidthEstimate(type, isDynamic)
+        if (!type) {
+            return;
         }
+        const isDynamic = !!e.request.mediaInfo?.streamInfo?.manifestInfo?.isDynamic;
+
+        console.log(`Persisting estimate on frag load complete for type: ${type}, isDynamic: ${isDynamic}`);
+        _saveBandwidthEstimate(type, isDynamic)
     }
 
     /**
@@ -758,7 +759,6 @@ function AbrController() {
     function _changeQuality(type, oldQuality, newQuality, maxIdx, reason, streamId) {
         if (type && streamProcessorDict[streamId] && streamProcessorDict[streamId][type]) {
             const streamInfo = streamProcessorDict[streamId][type].getStreamInfo();
-            const isDynamic = streamInfo && streamInfo.manifestInfo && streamInfo.manifestInfo.isDynamic;
             const bufferLevel = dashMetrics.getCurrentBufferLevel(type);
             logger.info('Stream ID: ' + streamId + ' [' + type + '] switch from ' + oldQuality + ' to ' + newQuality + '/' + maxIdx + ' (buffer: ' + bufferLevel + ') ' + (reason ? JSON.stringify(reason) : '.'));
 
@@ -777,7 +777,6 @@ function AbrController() {
                 },
                 { streamId: streamInfo.id, mediaType: type }
             );
-            _saveBandwidthEstimate(type, isDynamic);
         }
     }
 
