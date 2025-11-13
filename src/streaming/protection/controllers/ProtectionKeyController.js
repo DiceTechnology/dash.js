@@ -205,20 +205,22 @@ function ProtectionKeyController() {
      * @memberof module:ProtectionKeyController
      * @instance
      */
-    function getSupportedKeySystemsFromContentProtection(cps, protDataSet, sessionType) {
+    function getSupportedKeySystemMetadataFromContentProtection(cps, protDataSet, sessionType) {
         let cp, ks, ksIdx, cpIdx;
         let supportedKS = [];
 
         if (cps) {
-            const cencContentProtection = CommonEncryption.findCencContentProtection(cps);
+            const keys = Object.keys(cps).filter(key => Number.isInteger(+key));
+            const elements = keys.map(key => cps[key]);
+            const cencContentProtection = CommonEncryption.findCencContentProtection(elements); // Expects an array, whereas cps is an object, hence conversion above.
             for (ksIdx = 0; ksIdx < keySystems.length; ++ksIdx) {
                 ks = keySystems[ksIdx];
 
                 // Get protection data that applies for current key system
                 const protData = _getProtDataForKeySystem(ks.systemString, protDataSet);
 
-                for (cpIdx = 0; cpIdx < cps.length; ++cpIdx) {
-                    cp = cps[cpIdx];
+                for (cpIdx = 0; cpIdx < elements.length; ++cpIdx) {
+                    cp = elements[cpIdx];
                     if (cp.schemeIdUri.toLowerCase() === ks.schemeIdURI) {
                         // Look for DRM-specific ContentProtection
                         let initData = ks.getInitData(cp, cencContentProtection);
@@ -385,7 +387,7 @@ function ProtectionKeyController() {
         getKeySystems,
         setKeySystems,
         getKeySystemBySystemString,
-        getSupportedKeySystemsFromContentProtection,
+        getSupportedKeySystemMetadataFromContentProtection,
         getSupportedKeySystemsFromSegmentPssh,
         getLicenseServerModelInstance,
         processClearKeyLicenseRequest,
