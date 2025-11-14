@@ -115,6 +115,10 @@ function CapabilitiesFilter() {
                         return supported;
                     });
 
+                    if (period.AdaptationSet_asArray.length === 0) {
+                        logger.error(`All AdaptationSets have been removed from the period`);
+                    }
+
                     resolve();
                 })
                 .catch(() => {
