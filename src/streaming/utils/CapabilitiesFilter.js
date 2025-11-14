@@ -109,7 +109,7 @@ function CapabilitiesFilter() {
                             eventBus.trigger(Events.ADAPTATION_SET_REMOVED_NO_CAPABILITIES, {
                                 adaptationSet: as
                             });
-                            logger.warn(`AdaptationSet has been removed because of no supported Representation`);
+                            logger.info(`AdaptationSet has been removed because of no supported Representation`);
                         }
 
                         return supported;
