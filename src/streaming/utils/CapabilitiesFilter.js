@@ -211,6 +211,8 @@ function CapabilitiesFilter() {
     }
 
     function _addGenericAttributesToConfig(rep, config) {
+        // rep[DashConstants.CONTENT_PROTECTION] is an object, not an array.
+        // We check if it has any integer key to determine if there is any ContentProtection element
         if (rep && rep[DashConstants.CONTENT_PROTECTION]) {
             const value = rep[DashConstants.CONTENT_PROTECTION];
             const hasProtection = Object.keys(value).some(key => Number.isInteger(+key));
