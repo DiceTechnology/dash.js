@@ -51,6 +51,22 @@ export function supportsMediaSource() {
     return (hasManagedMediaSource || hasWebKit || hasMediaSource);
 }
 
+/**
+ * Reflect a promise so it never rejects.
+ *
+ * @param {Promise} promise
+ */
+async function reflectPromise(promise) {
+    return promise.then(
+        (value) => {
+            return { status: 'fulfilled', value };
+        },
+        (reason) => {
+            return { status: 'rejected', reason };
+        }
+    );
+}
+
 function Capabilities() {
 
     let instance,
@@ -175,7 +191,7 @@ function Capabilities() {
                 return navigator.mediaCapabilities.decodingInfo(configuration)
             })
 
-            Promise.allSettled(promises)
+            Promise.all(promises.map(reflectPromise))
                 .then((results) => {
                     const isSupported = results.some((singleResult) => {
                         return singleResult.status === 'fulfilled' && singleResult.value && singleResult.value.supported
