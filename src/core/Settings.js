@@ -835,7 +835,7 @@ import Events from './events/Events';
  *
  *
  * @property {boolean} [initialTrackSelectionPreferMainRole=false]
- * When enabled, initial track selection filters to only tracks with role="main" before applying the selectionModeForInitialTrack logic. If no track has role="main", falls back to all tracks (default behavior).
+ * When enabled, initial track selection filters to only tracks with role="main" before applying either the selectionModeForInitialTrack logic or any customInitialTrackSelectionFunction. If no track has role="main", falls back to all tracks (default behavior).
  *
  * @property {number} [fragmentRequestTimeout=20000]
  * Time in milliseconds before timing out on loading a media fragment.
