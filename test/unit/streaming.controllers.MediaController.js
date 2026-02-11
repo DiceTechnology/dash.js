@@ -884,6 +884,14 @@ describe('MediaController', function () {
         });
 
         describe('"initialTrackSelectionPreferMainRole" setting', function () {
+            beforeEach(function () {
+                settings.update({
+                    streaming: {
+                        selectionModeForInitialTrack: Constants.TRACK_SELECTION_MODE_HIGHEST_BITRATE,
+                        initialTrackSelectionPreferMainRole: false
+                    }
+                });
+            });
             it('should select track with role "main" when enabled', function () {
                 settings.update({ streaming: { initialTrackSelectionPreferMainRole: true } });
                 const tracks = [
