@@ -166,25 +166,24 @@ function CapabilitiesFilter() {
                         });
 
                     // Filter out representations whose codec family is incompatible with the
-                    // first remaining representation. The SourceBuffer is initialized with the
-                    // codec of the first representation (index 0), so allowing ABR to switch to
-                    // a representation with a different codec family (e.g. HEVC vs AVC in the
-                    // same AdaptationSet) would cause the MSE SourceBuffer to reject the data.
+                    // preferred codec family for this AdaptationSet. The SourceBuffer is
+                    // initialized with the codec of the preferred representation, so allowing
+                    // ABR to switch to a representation with a different codec family
+                    // (e.g. HEVC vs AVC in the same AdaptationSet) would cause the MSE
+                    // SourceBuffer to reject the data.
                     if (settings.get().streaming.capabilities.filterMixedCodecAdaptationSets &&
                         as.Representation_asArray.length > 1) {
-                        const firstCodecRoot = as.Representation_asArray[0].codecs
-                            ? as.Representation_asArray[0].codecs.split('.')[0]
-                            : null;
-                        if (firstCodecRoot) {
+                        const preferredCodecRoot = _findPreferredCodecRoot(as.Representation_asArray);
+                        if (preferredCodecRoot) {
                             const beforeLength = as.Representation_asArray.length;
                             as.Representation_asArray = as.Representation_asArray.filter((rep) => {
                                 if (!rep.codecs) {
                                     return true;
                                 }
                                 const repCodecRoot = rep.codecs.split('.')[0];
-                                const compatible = capabilities.codecRootCompatibleWithCodec(firstCodecRoot, repCodecRoot);
+                                const compatible = capabilities.codecRootCompatibleWithCodec(preferredCodecRoot, repCodecRoot);
                                 if (!compatible) {
-                                    logger.debug(`[Stream] Filtered out representation with codec ${rep.codecs} (codec family "${repCodecRoot}" is incompatible with primary codec family "${firstCodecRoot}")`);
+                                    logger.debug(`[Stream] Filtered out representation with codec ${rep.codecs} (codec family "${repCodecRoot}" is incompatible with primary codec family "${preferredCodecRoot}")`);
                                 }
                                 return compatible;
                             });
@@ -200,6 +199,63 @@ function CapabilitiesFilter() {
                     resolve();
                 });
         });
+    }
+
+    /**
+     * Selects the preferred codec family root from a list of representations.
+     *
+     * Selection priority:
+     *  1. Explicit codec preference order (HEVC variants before AVC variants).
+     *  2. Fallback: the codec family with the widest bitrate range (highest
+     *     max-minus-min bandwidth delta), which gives ABR the most room to
+     *     operate within a single family.
+     *
+     * Using a preference-based selection instead of simply picking index 0
+     * makes this stable across manifest updates, because dash.js internally
+     * re-sorts Representation_asArray by bitrate after each update.
+     *
+     * @param {Array} representations
+     * @returns {string|null} codec root (e.g. "hvc1", "avc1") or null if none found
+     */
+    function _findPreferredCodecRoot(representations) {
+        // Build a map of codecRoot -> { min, max } bandwidth
+        const codecRootMap = new Map();
+        for (const rep of representations) {
+            if (!rep.codecs) continue;
+            const root = rep.codecs.split('.')[0];
+            const bw = rep.bandwidth || 0;
+            const entry = codecRootMap.get(root);
+            if (entry) {
+                if (bw < entry.min) entry.min = bw;
+                if (bw > entry.max) entry.max = bw;
+            } else {
+                codecRootMap.set(root, { min: bw, max: bw });
+            }
+        }
+
+        if (codecRootMap.size === 0) return null;
+        if (codecRootMap.size === 1) return [...codecRootMap.keys()][0];
+
+        // Explicit preference order: HEVC packaging variants before AVC
+        const CODEC_PREFERENCE = ['hvc1', 'hev1', 'avc1', 'avc3'];
+        for (const preferred of CODEC_PREFERENCE) {
+            if (codecRootMap.has(preferred)) {
+                return preferred;
+            }
+        }
+
+        // Last resort: pick the family with the widest bitrate spread so that
+        // ABR has the most representations to work with.
+        let bestRoot = null;
+        let bestDelta = -1;
+        for (const [root, { min, max }] of codecRootMap) {
+            const delta = max - min;
+            if (delta > bestDelta) {
+                bestDelta = delta;
+                bestRoot = root;
+            }
+        }
+        return bestRoot;
     }
 
     function _createConfiguration(type, rep, codec) {
