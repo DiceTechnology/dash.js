@@ -656,28 +656,6 @@ function TextTracks(config) {
         let cue = _getCueInformation(currentItem, timeOffset)
         cue.isActive = false;
 
-        if (currentItem.styles) {
-            try {
-                if (currentItem.styles.align !== undefined && 'align' in cue) {
-                    cue.align = currentItem.styles.align;
-                }
-                if (currentItem.styles.line !== undefined && 'line' in cue) {
-                    cue.line = currentItem.styles.line;
-                }
-                if (currentItem.styles.snapToLines !== undefined && 'snapToLines' in cue) {
-                    cue.snapToLines = currentItem.styles.snapToLines;
-                }
-                if (currentItem.styles.position !== undefined && 'position' in cue) {
-                    cue.position = currentItem.styles.position;
-                }
-                if (currentItem.styles.size !== undefined && 'size' in cue) {
-                    cue.size = currentItem.styles.size;
-                }
-            } catch (e) {
-                logger.error(e);
-            }
-        }
-
         cue.onenter = function () {
             if (track.mode === Constants.TEXT_SHOWING) {
                 eventBus.trigger(MediaPlayerEvents.CAPTION_RENDERED, { currentTrackIdx });
@@ -724,7 +702,40 @@ function TextTracks(config) {
     function _getCueInformationForNonHtml(currentItem, timeOffset) {
         let cue = new Cue(currentItem.start - timeOffset, currentItem.end - timeOffset, currentItem.data);
         cue.cueID = `${cue.startTime}_${cue.endTime}`;
+        _applyCueStyles(cue, currentItem);
         return cue;
+    }
+
+    /**
+     * Copies the WebVTT cue settings parsed from the segment onto the cue. Applied here rather
+     * than in a single caller so that every non-HTML path gets them: with
+     * `dispatchForManualRendering` enabled the cue is built by _handleCaptionEvents, which
+     * previously returned it unstyled and left every cue at the default bottom-centre position.
+     */
+    function _applyCueStyles(cue, currentItem) {
+        if (!currentItem.styles) {
+            return;
+        }
+
+        try {
+            if (currentItem.styles.align !== undefined && 'align' in cue) {
+                cue.align = currentItem.styles.align;
+            }
+            if (currentItem.styles.line !== undefined && 'line' in cue) {
+                cue.line = currentItem.styles.line;
+            }
+            if (currentItem.styles.snapToLines !== undefined && 'snapToLines' in cue) {
+                cue.snapToLines = currentItem.styles.snapToLines;
+            }
+            if (currentItem.styles.position !== undefined && 'position' in cue) {
+                cue.position = currentItem.styles.position;
+            }
+            if (currentItem.styles.size !== undefined && 'size' in cue) {
+                cue.size = currentItem.styles.size;
+            }
+        } catch (e) {
+            logger.error(e);
+        }
     }
 
     function manualCueProcessing(time) {

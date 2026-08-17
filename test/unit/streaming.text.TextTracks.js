@@ -6,6 +6,8 @@ import VideoModelMock from './mocks/VideoModelMock';
 import Settings from '../../src/core/Settings';
 
 const SUBTITLE_DATA = 'subtitle lign 1';
+// Cue settings as VTTParser hands them over, i.e. `align:left line:28% position:31% size:50%`.
+const CUE_STYLES = {align: 'left', line: 28, snapToLines: false, position: 31, size: 50};
 const chai = require('chai');
 const expect = chai.expect;
 const context = {};
@@ -89,6 +91,35 @@ describe('TextTracks', function () {
             textTracks.addCaptions(0, 0, [{type: 'noHtml', data: SUBTITLE_DATA, start: 0, end: 2}]);
 
             expect(videoModelMock.getCurrentCue(track).text).to.equal(SUBTITLE_DATA);
+        });
+
+        it('should apply the WebVTT cue settings when dispatchForManualRendering is enabled', function () {
+            settings.update({streaming: {text: {dispatchForManualRendering: true}}});
+
+            textTracks.addTextTrack({
+                index: 0,
+                kind: 'subtitles',
+                id: 'eng',
+                defaultTrack: true,
+                isTTML: true}, 1);
+
+            textTracks.createTracks();
+            let track = videoModelMock.getTextTrack('subtitles', 'eng');
+
+            textTracks.addCaptions(0, 0, [{
+                type: 'noHtml',
+                data: SUBTITLE_DATA,
+                start: 0,
+                end: 2,
+                styles: CUE_STYLES}]);
+
+            const cue = videoModelMock.getCurrentCue(track);
+
+            expect(cue.align).to.equal(CUE_STYLES.align);
+            expect(cue.line).to.equal(CUE_STYLES.line);
+            expect(cue.snapToLines).to.equal(CUE_STYLES.snapToLines);
+            expect(cue.position).to.equal(CUE_STYLES.position);
+            expect(cue.size).to.equal(CUE_STYLES.size);
         });
     });
 });
