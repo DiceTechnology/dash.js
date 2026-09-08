@@ -1848,6 +1848,13 @@ function MediaPlayer() {
         if (!source) {
             throw SOURCE_NOT_ATTACHED_ERROR;
         }
+        // attachSource() also accepts an already-parsed manifest object (e.g. to resume a
+        // suspended stream without re-fetching an expired signed URL). Third-party SDKs
+        // that call getSource() (e.g. Mux) only expect a string, so prefer the manifest's
+        // own recorded URL when the raw source isn't a string.
+        if (typeof source !== 'string' && source && (source.originalUrl || source.url)) {
+            return source.originalUrl || source.url;
+        }
         return source;
     }
 
