@@ -655,6 +655,8 @@ declare namespace dashjs {
 
         getRegularPeriods(externalManifest: object): any[];
 
+        getManifest(externalManifest?: object): object | null;
+
         getMpd(externalManifest?: object): Mpd;
 
         getLocation(manifest: object): MpdLocation[];
