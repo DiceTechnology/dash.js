@@ -225,27 +225,6 @@ function Capabilities() {
         return configuration
     }
 
-    /**
-     * MPD@frameRate (and Representation@frameRate) can be a plain number or a fraction
-     * ("24000/1001", per ISO/IEC 23009-1). parseFloat() alone stops at the "/" and silently
-     * returns the numerator as a whole framerate (e.g. 24000 instead of ~23.976), which then
-     * gets passed straight to MediaCapabilities.decodingInfo() as the requested framerate,
-     * causing every representation to fail the capability check regardless of codec/profile.
-     * @param {string|number} frameRate
-     * @return {number}
-     * @private
-     */
-    function _parseFrameRate(frameRate) {
-        if (typeof frameRate === 'string' && frameRate.indexOf('/') !== -1) {
-            const [numerator, denominator] = frameRate.split('/').map(Number);
-            if (denominator) {
-                return numerator / denominator;
-            }
-        }
-
-        return parseFloat(frameRate);
-    }
-
     function _getGenericMediaCapabilitiesVideoConfig(inputConfig) {
         const configuration = {
             video: {}
@@ -253,7 +232,7 @@ function Capabilities() {
 
         configuration.video.width = inputConfig.width;
         configuration.video.height = inputConfig.height;
-        configuration.video.framerate = _parseFrameRate(inputConfig.framerate);
+        configuration.video.framerate = parseFloat(inputConfig.framerate);
         if (inputConfig.hdrMetadataType) {
             configuration.video.hdrMetadataType = inputConfig.hdrMetadataType;
         }
