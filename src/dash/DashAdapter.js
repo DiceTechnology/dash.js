@@ -995,6 +995,17 @@ function DashAdapter() {
 
     // #region PRIVATE FUNCTIONS
     // --------------------------------------------------
+
+    /**
+     * Returns the currently loaded manifest object, or null if none has been parsed yet.
+     *
+     * The returned object can be passed straight back into `MediaPlayer#attachSource()` in place
+     * of a URL to reattach the same content without a network re-fetch of the manifest.
+     * @param {object} externalManifest Omit this value if no external manifest should be used
+     * @returns {object|null} the manifest
+     * @memberOf module:DashAdapter
+     * @instance
+     */
     function getManifest(externalManifest) {
         return externalManifest ? externalManifest : voPeriods.length > 0 ? voPeriods[0].mpd.manifest : null;
     }
@@ -1260,6 +1271,7 @@ function DashAdapter() {
         getVoRepresentations,
         getEventsFor,
         getEvent,
+        getManifest,
         getMpd,
         setConfig,
         updatePeriods,
