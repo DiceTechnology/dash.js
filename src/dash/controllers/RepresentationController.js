@@ -46,8 +46,9 @@ function RepresentationController(config) {
     const streamInfo = config.streamInfo;
     const dashConstants = config.dashConstants;
     const segmentsController = config.segmentsController;
-    const isDynamic = config.isDynamic;
     const adapter = config.adapter;
+
+    let isDynamic = config.isDynamic;
 
     let instance,
         realAdaptation,
@@ -60,6 +61,10 @@ function RepresentationController(config) {
         resetInitialSettings();
 
         eventBus.on(MediaPlayerEvents.MANIFEST_VALIDITY_CHANGED, onManifestValidityChanged, instance);
+    }
+
+    function setIsDynamic(value) {
+        isDynamic = value;
     }
 
     function getStreamId() {
@@ -340,7 +345,8 @@ function RepresentationController(config) {
         getCurrentRepresentationInfo,
         getRepresentationForQuality,
         prepareQualityChange,
-        reset
+        reset,
+        setIsDynamic
     };
 
     setup();
