@@ -967,6 +967,7 @@ declare namespace dashjs {
             applyServiceDescription?: boolean,
             applyProducerReferenceTime?: boolean,
             applyContentSteering?: boolean,
+            ignoreFinalStaticManifestOnDynamicToStaticTransition?: boolean,
             cacheInitSegments?: boolean,
             eventControllerRefreshDelay?: number,
             enableManifestDurationMismatchFix?: boolean,

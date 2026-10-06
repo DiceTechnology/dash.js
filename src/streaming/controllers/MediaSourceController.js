@@ -96,7 +96,7 @@ function MediaSourceController() {
 
     function setDuration(value, log = true) {
         if (!mediaSource || mediaSource.readyState !== 'open') return;
-        if (value === null && isNaN(value)) return;
+        if (value === null || isNaN(value)) return;
         if (mediaSource.duration === value) return;
 
         if (value === Infinity && !settings.get().streaming.buffer.mediaSourceDurationInfinity) {
@@ -104,6 +104,11 @@ function MediaSourceController() {
         }
 
         if (!isBufferUpdating(mediaSource)) {
+            // Setting the duration below the highest presentation timestamp of any buffered coded frames throws an InvalidStateError. Clamp the duration to the highest buffered end time, for instance when applying the final duration after a transition from dynamic to static.
+            const highestBufferedEnd = getBufferedRangeEnd(mediaSource);
+            if (highestBufferedEnd > value) {
+                value = highestBufferedEnd;
+            }
             if (log) {
                 logger.info('Set MediaSource duration:' + value);
             }
@@ -145,6 +150,12 @@ function MediaSourceController() {
         }
 
         return max;
+    }
+
+    function clearSeekableRange() {
+        if (mediaSource && typeof mediaSource.clearLiveSeekableRange === 'function' && mediaSource.readyState === 'open') {
+            mediaSource.clearLiveSeekableRange();
+        }
     }
 
     function signalEndOfStream(source) {
@@ -191,6 +202,7 @@ function MediaSourceController() {
 
     instance = {
         attachMediaSource,
+        clearSeekableRange,
         createMediaSource,
         detachMediaSource,
         setConfig,

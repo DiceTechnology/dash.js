@@ -948,6 +948,11 @@ function StreamProcessor(config) {
 
     function updateStreamInfo(newStreamInfo) {
         streamInfo = newStreamInfo;
+        if (streamInfo.manifestInfo.isDynamic !== isDynamic) {
+            isDynamic = streamInfo.manifestInfo.isDynamic;
+            dashHandler.initialize(isDynamic);
+            representationController.setIsDynamic(isDynamic);
+        }
         if (!isBufferingCompleted()) {
             return bufferController.updateAppendWindow();
         }
